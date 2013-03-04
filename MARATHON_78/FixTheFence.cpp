@@ -28,8 +28,8 @@ class FixTheFence {
     int cc[101][101];
     
     // records whether an edge was visited. 
-    bool hh[101][100];
-    bool vv[100][101];
+    int hh[101][100];
+    int vv[100][101];
     
     // back trace 
     // back trace map, records the 
@@ -95,8 +95,71 @@ class FixTheFence {
         bt.push_back(zip(x,y));
     }
     
-    // evaluate the 
+    // evaluate the score in the range.
     void eval(int xa, int xb, int ya, int yb) {
+        // bound the range
+        xa = max(xa, 0);
+        ya = max(ya, 0);
+        xb = min(xa, n-1);
+        yb = min(yb, m-1);
+        // test
+        int score = 0;
+        for(int i = xa; i <= xb; ++i) {
+            for(int j = ya, j <= yb; ++j) {
+                int edges = hh[i][j] + hh[i+1][j] + vv[i][j] + vv[i][j+1];
+                int dots = (cc[i][j]>0?1:0) + (cc[i][j+1]>0?1:0)
+                        + (cc[i+1][j]>0?1:0) + (cc[i+1][j+1]>0?1:0);
+                bool touch = (x==i||x==i+1) && (y==j||y==j+1);
+                // scoring comments:
+                // 0: broken cell
+                // 1: unfinished cell, not touched, unbroken
+                // 2: unfinished cell, touched, unbroken
+                // 3: finished cell
+                switch(dg[i][j]) {
+                    case 0:
+                        if(edges == 0) {
+                            score += 3;
+                        }
+                        break;
+                    case 1:
+                        if(edges == 1) {
+                            score += 3;
+                        }
+                        else if(edges == 0 && dots < 4 && touch) {
+                            score += 2;
+                        }
+                        else if(edges == 0 && dots == 0) {
+                            score += 1;
+                        }
+                        break;
+                    case 2:
+                        if(edges == 2) {
+                            score += 3;
+                        }
+                        else if(edges == 1 && dots < 4 && touch) {
+                            score += 2
+                        }
+                        else if(edges < 2 && dots < 4) {
+                            score += 1;
+                        }
+                        break;
+                    case 3:
+                        if(edges == 3) {
+                            score += 3;
+                        }
+                        else if(touch && (edges == 2 && dots == 3
+                                    || edges == 1 && dots == 2
+                                    || edges == 0 && dots == 1)) {
+                            score += 2;
+                        }
+                        else if(!touch && dots == 0) {
+                            score += 1;
+                        }
+                        break;
+                }
+            }
+        }
+        return score;
     }
     
     // solution A: simple loop.
@@ -207,16 +270,70 @@ public:
             vector<int> er;
             // bfs the bb to get the backtrace
             deque<int> q;
+            
+            int x0 = x, y0 = y;
+            
+            // try the four direction (in fact 3 at most), and evaluate
+            // the estimated score.
             for(int d = 0; d < 4; ++d) {
                 x += dx[d];
                 y += dy[d];
                 
-                if(x >= 0 && x < n && y >= 0 && y < m) {
-                    int xx = x, yy = y;
-                    q.clear();
-                    er.clear();
+                if(x >= 0 && x < n && y >= 0 && y < m && cc[x][y] == 0) {
+                    cc[x0][y0] += 1;
+                    cc[x][y] += 1;
+                    switch(d) {
+                        case 0: // R
+                            hh[x0][y0] = true;
+                            break;
+                        case 1: // D
+                            vv[x0][y0] = true;
+                            break;
+                        case 2: // L
+                            hh[x][y] = true;
+                            break;
+                        case 3: // U
+                            vv[x][y] = true;
+                            break;
+                    } 
+                    
+                    int score = eval(x0-4, x0+3, y0-4, y0+3);
+                    vd.push_back(make_pair(score, d));
+                    
+                    switch(d) {
+                        case 0: // R
+                            hh[x0][y0] = false;
+                            break;
+                        case 1: // D
+                            vv[x0][y0] = false;
+                            break;
+                        case 2: // L
+                            hh[x][y] = false;
+                            break;
+                        case 3: // U
+                            vv[x][y] = false;
+                            break;
+                    }
+                    cc[x1][y1] += 1;
+                    cc[x][y] -= 1;
                 }
                 
+                x -= dx[d];
+                y -= dy[d];
+            }
+            
+            // sort by the score, iterate from the highest score,
+            // then foreach, check the backtrack path, if valid, go.
+            // observated that, we go only when backtrack path exists,
+            // so at least one back step exists next, so we will not
+            // need to backtrack this go.
+            sort(vd.rbegin(), vd.rend());
+            for(int k = 0; k < vd.size(); ++k) {
+                int d = vd[k].second;
+                bool yes = true;
+                x += dx[d];
+                y += dy[d];
+//////////////////////////////////////////////
                 x -= dx[d];
                 y -= dy[d];
             }
