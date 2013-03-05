@@ -1,7 +1,9 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <deque>
 #include <algorithm>
+#include <string>
 using namespace std;
 
 // direction
@@ -12,7 +14,7 @@ const char dd[] = "RDLU";
 
 class FixTheFence {
     
-    
+
     // initial diagram graph.
     char dg[100][100];
     
@@ -97,24 +99,43 @@ class FixTheFence {
         
         // set initial point
         cx = x = x0;
-        cx = y = y0;
+        cy = y = y0;
         
         cc[x][y] = 0;
         bb[x][y] = 0;
         bt.push_back(zip(x,y));
     }
     
+	// estimates the final score of the current loop
+	int estimate() {
+		int score = 0;
+		
+        for(int i = 0; i < n; ++i) {
+            for(int j = 0; j < m; ++j) {
+				if(dg[i][j] == hh[i][j] + hh[i+1][j] + vv[i][j] + vv[i][j+1]) {
+					score += 1;
+				}
+			}
+		}
+		return score;
+	}
+
     // evaluate the score in the range.
     int eval(int xa, int xb, int ya, int yb) {
         // bound the range
         xa = max(xa, 0);
         ya = max(ya, 0);
-        xb = min(xa, n-1);
+        xb = min(xb, n-1);
         yb = min(yb, m-1);
+printf("[%d, %d, %d, %d]\n", xa, xb, ya, yb);
         // test
+int old = 0;
         int score = 0;
         for(int i = xa; i <= xb; ++i) {
-            for(int j = y; j <= yb; ++j) {
+//cout << "i = " << i << endl;
+            for(int j = ya; j <= yb; ++j) {
+
+//cout << "j = " << j << endl;
                 int edges = hh[i][j] + hh[i+1][j] + vv[i][j] + vv[i][j+1];
                 int dots = (cc[i][j]>0?1:0) + (cc[i][j+1]>0?1:0)
                         + (cc[i+1][j]>0?1:0) + (cc[i+1][j+1]>0?1:0);
@@ -166,7 +187,10 @@ class FixTheFence {
                         }
                         break;
                 }
+//cout << score-old;
+//old = score;
             }
+//cout << endl;
         }
         return score;
     }
@@ -264,15 +288,10 @@ class FixTheFence {
         return ret;
     }
     
-public:
-    
-    string findLoop(const vector<string> &diagram) {
-        
-//        return "0 0 RDLU";
-        
-        __initialize(diagram);
-        
-        __reset(0,0);
+	// solve the puzzle with a given start point.
+	void solve(int x_start, int y_start) {
+		
+        __reset(x_start, y_start);
         
         while(true) {
 
@@ -293,54 +312,67 @@ system("pause");
             // try the four direction (in fact 3 at most), and evaluate
             // the estimated score.
             for(int d = 0; d < 4; ++d) {
+
+				// if straight backward, refuse.
+				if(path.size() > 0 && dd[(d+2)&3] == path.back()) continue;
+
                 x += dx[d];
                 y += dy[d];
                 
                 if(inside(x, y) && cc[x][y] < 2) {
                     
-                    // solution founded.
-                    if(cc[x][y] == 1 && path.size() > 1) {
+                    cc[x0][y0] += 1;
+                    cc[x][y] += 1;
+                    switch(d) {
+                        case 0: // R
+                            hh[x0][y0] = true;
+                            break;
+                        case 1: // D
+                            vv[x0][y0] = true;
+                            break;
+                        case 2: // L
+                            hh[x][y] = true;
+                            break;
+                        case 3: // U
+                            vv[x][y] = true;
+                            break;
+                    }
+					// solution founded.
+					if(cc[x][y] == 2) {
+						int current_score = estimate();
 cout << "solution found!!!" << endl;
+cout << current_score << endl;
+cout << path+dd[d] << endl;
+						if(current_score > best) {
+							best = current_score;
+							char ss[2000];
+							sprintf(ss, "%d %d %s", cx, cy, (path+dd[d]).c_str());
+							ans = ss;
+						}
 ////////////////////////////////////////////////
+					}
+					else {
+						int score = eval(x0-4, x0+3, y0-4, y0+3);
+						vd.push_back(make_pair(score, d));
+cout << "score: " << score << ", dir: " << dd[d] << endl;
+					}
+                    switch(d) {
+                        case 0: // R
+                            hh[x0][y0] = false;
+                            break;
+                        case 1: // D
+                            vv[x0][y0] = false;
+                            break;
+                        case 2: // L
+                            hh[x][y] = false;
+                            break;
+                        case 3: // U
+                            vv[x][y] = false;
+                            break;
                     }
-                    else {
-                        cc[x0][y0] += 1;
-                        cc[x][y] += 1;
-                        switch(d) {
-                            case 0: // R
-                                hh[x0][y0] = true;
-                                break;
-                            case 1: // D
-                                vv[x0][y0] = true;
-                                break;
-                            case 2: // L
-                                hh[x][y] = true;
-                                break;
-                            case 3: // U
-                                vv[x][y] = true;
-                                break;
-                        } 
-                        int score = eval(x0-4, x0+3, y0-4, y0+3);
-                        vd.push_back(make_pair(score, d));
-    cout << "score: " << score << ", dir: " << dd[d] << endl;
-                        
-                        switch(d) {
-                            case 0: // R
-                                hh[x0][y0] = false;
-                                break;
-                            case 1: // D
-                                vv[x0][y0] = false;
-                                break;
-                            case 2: // L
-                                hh[x][y] = false;
-                                break;
-                            case 3: // U
-                                vv[x][y] = false;
-                                break;
-                        }
-                        cc[x0][y0] -= 1;
-                        cc[x][y] -= 1;
-                    }
+                    cc[x0][y0] -= 1;
+                    cc[x][y] -= 1;
+                    
                 }
                 
                 x -= dx[d];
@@ -377,7 +409,7 @@ cout << "solution found!!!" << endl;
                 // the maximum backtrack(bt) index
                 // because the current trying cell may overlap with it.
                 int bound = bb[x][y] > -1 ? bb[x][y] : 999999;
-                
+//printf("bound = %d\n", bound);
                 while(!q.empty() && !yes) {
 /*
 cout << dd[d] << endl;
@@ -403,10 +435,11 @@ system("pause");
                                 && cc[xx1][yy1] < 2) {
                             // trace founded       
                             if(bb[xx1][yy1] != -1 && bb[xx1][yy1] < bound) {
-//cout << "found! : " << endl;
-//printf("%d %d\n", xx, yy);
-//system("pause");
-
+/*
+cout << "found! : " << endl;
+printf("%d %d\n", xx1, yy1);
+system("pause");
+*/
                                 // erase the trace rear
                                 int ss = bb[xx1][yy1];
 //cout << "ss = " << ss << endl;
@@ -414,11 +447,6 @@ system("pause");
 
 //printf("%d %d\n", ux(bt.back()), uy(bt.back()));
 
-for(int i = 0; i <= 5; ++i) {
-for(int j = 0; j <= 5; ++j) {
-    cout << char(bb[i][j]==-1?'.':'0'+bb[i][j]);
-}cout << endl;
-}
                                     bb[ux(bt.back())][uy(bt.back())] = -1;
                                     bt.pop_back();
 
@@ -482,7 +510,7 @@ for(int j = 0; j <= 5; ++j) {
                             break;
                     } 
 //cout << (yes?"yes":"no") << endl;
-
+/*
 for(int i = 0; i < bt.size(); ++i) printf("(%d, %d) ", ux(bt[i]), uy(bt[i]));cout << endl;
 for(int i = 0; i <= n; ++i) {
 for(int j = 0; j <= m; ++j) {
@@ -490,7 +518,7 @@ for(int j = 0; j <= m; ++j) {
 }cout << endl;
 }
 system("pause");
-
+*/
                     break;
                 }
             }
@@ -498,12 +526,23 @@ system("pause");
             // if no more solution, exit.
             if(!yes) break;
         }
+	}
+
+public:
+    
+    string findLoop(const vector<string> &diagram) {
         
+
+        __initialize(diagram);
+        
+		solve(2, 3);
+
+cout << "best = " << best << endl;
+        return ans;
     }
 };
 
 // tester
-#include <fstream>
 
 int main() {
     
@@ -524,6 +563,8 @@ int main() {
     FixTheFence ff;
     cout << ff.findLoop(diagram) << endl;
     
+	while(1);
+
     return 0;
     
 }
