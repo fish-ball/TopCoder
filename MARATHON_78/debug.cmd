@@ -1,2 +1,1 @@
-java -jar Vis.jar -exec FixTheFence.exe -seed 17
-#pause
+java -jar Vis.jar -exec FixTheFence.exe -seed 5

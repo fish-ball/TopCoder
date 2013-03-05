@@ -1,0 +1,200 @@
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 1
+move input.txt 1.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 2
+move input.txt 2.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 3
+move input.txt 3.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 4
+move input.txt 4.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 5
+move input.txt 5.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 6
+move input.txt 6.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 7
+move input.txt 7.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 8
+move input.txt 8.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 9
+move input.txt 9.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 10
+move input.txt 10.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 11
+move input.txt 11.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 12
+move input.txt 12.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 13
+move input.txt 13.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 14
+move input.txt 14.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 15
+move input.txt 15.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 16
+move input.txt 16.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 17
+move input.txt 17.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 18
+move input.txt 18.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 19
+move input.txt 19.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 20
+move input.txt 20.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 21
+move input.txt 21.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 22
+move input.txt 22.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 23
+move input.txt 23.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 24
+move input.txt 24.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 25
+move input.txt 25.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 26
+move input.txt 26.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 27
+move input.txt 27.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 28
+move input.txt 28.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 29
+move input.txt 29.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 30
+move input.txt 30.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 31
+move input.txt 31.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 32
+move input.txt 32.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 33
+move input.txt 33.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 34
+move input.txt 34.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 35
+move input.txt 35.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 36
+move input.txt 36.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 37
+move input.txt 37.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 38
+move input.txt 38.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 39
+move input.txt 39.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 40
+move input.txt 40.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 41
+move input.txt 41.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 42
+move input.txt 42.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 43
+move input.txt 43.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 44
+move input.txt 44.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 45
+move input.txt 45.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 46
+move input.txt 46.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 47
+move input.txt 47.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 48
+move input.txt 48.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 49
+move input.txt 49.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 50
+move input.txt 50.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 51
+move input.txt 51.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 52
+move input.txt 52.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 53
+move input.txt 53.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 54
+move input.txt 54.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 55
+move input.txt 55.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 56
+move input.txt 56.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 57
+move input.txt 57.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 58
+move input.txt 58.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 59
+move input.txt 59.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 60
+move input.txt 60.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 61
+move input.txt 61.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 62
+move input.txt 62.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 63
+move input.txt 63.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 64
+move input.txt 64.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 65
+move input.txt 65.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 66
+move input.txt 66.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 67
+move input.txt 67.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 68
+move input.txt 68.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 69
+move input.txt 69.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 70
+move input.txt 70.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 71
+move input.txt 71.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 72
+move input.txt 72.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 73
+move input.txt 73.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 74
+move input.txt 74.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 75
+move input.txt 75.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 76
+move input.txt 76.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 77
+move input.txt 77.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 78
+move input.txt 78.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 79
+move input.txt 79.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 80
+move input.txt 80.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 81
+move input.txt 81.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 82
+move input.txt 82.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 83
+move input.txt 83.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 84
+move input.txt 84.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 85
+move input.txt 85.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 86
+move input.txt 86.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 87
+move input.txt 87.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 88
+move input.txt 88.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 89
+move input.txt 89.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 90
+move input.txt 90.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 91
+move input.txt 91.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 92
+move input.txt 92.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 93
+move input.txt 93.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 94
+move input.txt 94.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 95
+move input.txt 95.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 96
+move input.txt 96.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 97
+move input.txt 97.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 98
+move input.txt 98.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 99
+move input.txt 99.txt
+java -jar Vis.jar -exec FixTheFence.exe -novis -seed 100
+move input.txt 100.txt
