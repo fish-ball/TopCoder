@@ -4,6 +4,7 @@
 #include <deque>
 #include <algorithm>
 #include <string>
+#include <ctime>
 using namespace std;
 
 // direction
@@ -11,8 +12,12 @@ const int dx[] = {0, 1, 0, -1};
 const int dy[] = {1, 0, -1, 0};
 const char dd[] = "RDLU";
 
+char sbuf[10300];
+
 
 class FixTheFence {
+    
+    double start;
     
 
     // initial diagram graph.
@@ -61,6 +66,8 @@ class FixTheFence {
     // initialize the grid
     void __initialize(const vector<string> &diagram) {
         
+        start = clock();
+        
         // the diagram size
         n = diagram.size();
         m = diagram[0].size();
@@ -70,7 +77,7 @@ class FixTheFence {
         memset(dg, -1, sizeof(dg));
         memset(cnt, 0, sizeof(cnt));
         best = 0;
-        ans = "0 0 RDLU";
+        ans = "";
         
         // record
         for(int i = 0; i < n; ++i) {
@@ -101,22 +108,50 @@ class FixTheFence {
         cx = x = x0;
         cy = y = y0;
         
-        cc[x][y] = 0;
+        // set backtrack start point.
         bb[x][y] = 0;
         bt.push_back(zip(x,y));
+    }
+    
+    // get solution according to the cx, cy and path.
+    string get_result() {
+		sprintf(sbuf, "%d %d %s", cx, cy, path.c_str());
+		return sbuf;
+    }
+    
+    // commit solution and update the best.
+    void commit() {
+		int score = estimate();
+		if(score > best) {
+			best = score;
+			ans = get_result();
+		}
+    }
+    
+    // move and trace as the direction.
+    bool mov(int d) {
+        int xx = x, yy = y;
+        x += dx[d];
+        y += dy[d];
+        if(!inside(x, y) || !inside(xx, yy)) return false;
+        cc[x][y] += 1;
+        cc[xx][yy] += 1;
+        path += dd[d];
+        switch(d) {
+            case 0: hh[xx][yy] = 1; break;
+            case 1: vv[xx][yy] = 1; break;
+            case 2: hh[x][y] = 1; break;
+            case 3: vv[x][y] = 1; break;
+        }
+        return true;
     }
     
 	// estimates the final score of the current loop
 	int estimate() {
 		int score = 0;
-		
-        for(int i = 0; i < n; ++i) {
-            for(int j = 0; j < m; ++j) {
-				if(dg[i][j] == hh[i][j] + hh[i+1][j] + vv[i][j] + vv[i][j+1]) {
-					score += 1;
-				}
-			}
-		}
+        for(int i = 0; i < n; ++i)
+            for(int j = 0; j < m; ++j)
+				score += (dg[i][j] == hh[i][j]+hh[i+1][j]+vv[i][j]+vv[i][j+1] ? 1 : 0);
 		return score;
 	}
 
@@ -196,96 +231,56 @@ class FixTheFence {
     }
     
     // solution A: simple loop.
-    string solve_a() {
-        return "0 0 RDLU";
+    void solve_a() {
+        __reset(0, 0);
+        mov(0); mov(1); mov(2); mov(3);
+        commit();
     }
     
     // solution B: single line waver.
-    string solve_b() {
-        
-        string ret = "0 0 ";
-        
-        int x = 0, y = 0;
-        
+    void solve_b() {
+        __reset(0, 0);
+        // each row go and come.
         while(x + 2 <= n) {
-            // if not begin, down 1 unit.
-            if(x > 0) {
-                ret += 'D';
-                x += 1;
-            }
-            
+            // if not the first row, down 1 unit.
+            if(x > cx) mov(1);
             // move right most.
-            while(y < n) {
-                ret += 'R';
-                y += 1;
-            }
+            while(y < m) mov(0);
             // down 1 unit on the right side.
-            ret += 'D';
-            x += 1;
+            mov(1);
             // move left to 1.
-            while(y > 1) {
-                ret += 'L';
-                y -= 1;
-            }
+            while(y > 1) mov(2);
         }
-        
-        while(y > 0) {
-            ret += 'L';
-            y -= 1;
-        }
-        
-        while(x > 0) {
-            ret += 'U';
-            x -= 1;
-        }
-        
-        return ret;
+        // move left to 0.
+        while(y > 0) mov(2);
+        // move to top.
+        while(x > 0) mov(3);
+        // commit solution.
+        commit();
     }
     
     // solution C: double line waver.
-    string solve_c() {
-        
-        string ret = "0 0 ";
-        
-        int x = 0, y = 0;
-        
+    void solve_c() {
+        // reset start point;
+        if(n % 4 != 2) __reset(1, 0);
+        else __reset(0, 0);
+        // each second row go and come.
         while(x + 4 <= n) {
-            // if not begin, down 2 unit.
-            if(x > 0) {
-                ret += 'D';
-                ret += 'D';
-                x += 2;
-            }
-            
+            // if not the first row, down 2 unit.
+            if(x > cx) { mov(1); mov(1); }
             // move right most.
-            while(y < n) {
-                ret += 'R';
-                y += 1;
-            }
+            while(y < m) mov(0);
             // down 2 unit on the right side.
-            ret += 'D';
-            ret += 'D';
-            x += 2;
+            mov(1); mov(1);
             // move left to 2.
-            while(y > 2) {
-                ret += 'L';
-                y -= 1;
-            }
+            while(y > 2) mov(2);
         }
-        
-        while(y > 0) {
-            ret += 'L';
-            y -= 1;
-        }
-        
-        while(x > 0) {
-            ret += 'U';
-            x -= 1;
-        }
-        
-        if(n % 4 > 0) ret[0] = '1';
-        
-        return ret;
+        // move left to 0.
+        while(y > 0) mov(2);
+        // move to top.
+        while(x > cx) mov(3);
+        // commit solution.
+        commit();
     }
     
 	// solve the puzzle with a given start point.
@@ -339,25 +334,26 @@ system("pause");
                     }
 					// solution founded.
 					if(cc[x][y] == 2) {
-						int current_score = estimate();
-/*
-cout << "solution found!!!" << endl;
-cout << current_score << endl;
-cout << path+dd[d] << endl;
-//*/
-
-						if(current_score > best) {
-							best = current_score;
-							char ss[2000];
-							sprintf(ss, "%d %d %s", cx, cy, (path+dd[d]).c_str());
-							ans = ss;
-						}
-////////////////////////////////////////////////
+//////////////////solution/////////////////////
+//cout << "solution found!!!" << endl;
+                        // record the path.
+                        path += dd[d];
+                        // commit the solution.
+                        commit();
+                        // recover the path.
+                        path.erase(path.size()-1);
+/////////////////end solution/////////////////////
 					}
 					else {
-						int score = eval(x0-4, x0+3, y0-4, y0+3);
+/////////////////evaluation/////////////////////
+                        
+                        
+                        
+						int score = eval(x0-3, x0+2, y0-3, y0+2);
 						vd.push_back(make_pair(score, d));
 //cout << "score: " << score << ", dir: " << dd[d] << endl;
+
+////////////////evaluation/////////////////////
 					}
                     switch(d) {
                         case 0: // R
@@ -403,7 +399,6 @@ cout << path+dd[d] << endl;
                 
                 // bfs initialize
                 q.clear();
-                er.clear();
                 
                 q.push_back(zip(x, y));
                 pr[x][y] = zip(x, y);
@@ -413,7 +408,9 @@ cout << path+dd[d] << endl;
                 // because the current trying cell may overlap with it.
                 int bound = bb[x][y] > -1 ? bb[x][y] : 999999;
 //printf("bound = %d\n", bound);
-                while(!q.empty() && !yes) {
+                while(!q.empty() && !yes 
+                    //&& er.size() < 50/* constrains the backtracking cannot change direction */
+                        ) {
 /*
 cout << dd[d] << endl;
 for(int i = 0; i <= n; ++i) {
@@ -517,27 +514,27 @@ system("pause");
                     } 
 //cout << (yes?"yes":"no") << endl;
 /*
+for(int i = 0; i <= n; ++i) {
+for(int j = 0; j <= m; ++j) {
+    cout << char(cc[i][j]<0?'.':'0'+cc[i][j]);
+}cout << endl;
+}cout<<endl;
+//
 cout << dd[d] << endl;
 for(int i = 0; i <= n; ++i) {
 for(int j = 0; j <= m; ++j) {
     cout << char(pr[i][j]==-1?'.':'#');
 }cout << endl;
 }cout<<endl;
-
-for(int i = 0; i <= n; ++i) {
-for(int j = 0; j <= m; ++j) {
-    cout << char(cc[i][j]<0?'.':'0'+cc[i][j]);
-}cout << endl;
-}cout<<endl;
-
+//
 for(int i = 0; i < bt.size(); ++i) printf("(%d, %d) ", ux(bt[i]), uy(bt[i]));cout << endl;
 for(int i = 0; i <= n; ++i) {
 for(int j = 0; j <= m; ++j) {
     cout << char(bb[i][j]==-1?'.':'0'+bb[i][j]);
 }cout << endl;
 }
-system("pause");
 //*/
+//system("pause");
                     break;
                 }
             }
@@ -551,19 +548,16 @@ public:
     
     string findLoop(const vector<string> &diagram) {
         
-
         __initialize(diagram);
         
-		int k;
-		if(n > 80) k = 3;
-		else if(n > 50) k = 5;
-		else if(n > 30) k = 10;
-		else if(n > 20) k = 20;
-		else k = 50;
-
-		while(k--) {
-			solve(rand() % n, rand() % m);
-		}
+        // ordinary try.
+        //solve_a();
+        //solve_b();
+        solve_c();
+        
+		//while(double(clock() - start) / CLOCKS_PER_SEC < 9.0) {
+		//	solve(rand() % n, rand() % m);
+		//}
 
 //cout << "best = " << best << endl;
         return ans;

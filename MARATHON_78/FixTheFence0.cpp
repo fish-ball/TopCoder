@@ -90,7 +90,6 @@ public:
                     ans += 'D';
                     x += 2;
                 }
-                
                 // move right most.
                 while(y < n) {
                     ans += 'R';
