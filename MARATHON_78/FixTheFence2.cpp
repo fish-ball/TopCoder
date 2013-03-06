@@ -112,34 +112,6 @@ class FixTheFence {
         bt.push_back(zip(x,y));
     }
     
-    // move and trace as the direction.
-    void mov(int d, string& out) {
-        int xx = x, yy = y;
-        x += dx[d];
-        y += dy[d];
-        if(!inside(x, y) || !inside(xx, yy)) return;
-        cc[x][y] += 1;
-        cc[xx][yy] += 1;
-        switch(d) {
-            case 0:
-                out += 'R';
-                hh[xx][yy] = true;
-                break;
-            case 1:
-                out += 'D';
-                vv[xx][yy] = true;
-                break;
-            case 2:
-                out += 'L';
-                hh[x][y] = true;
-                break;
-            case 3:
-                out += 'U';
-                vv[x][y] = true;
-                break;
-        }
-    }
-    
 	// estimates the final score of the current loop
 	int estimate() {
 		int score = 0;
@@ -230,86 +202,96 @@ class FixTheFence {
     }
     
     // solution A: simple loop.
-    void solve_a() {
-        __reset(0, 0);
-        string ret = "0 0 ";
-        mov(0, ret); mov(1, ret); mov(2, ret); mov(3, ret);
-        int score = estimate();
-        if(score > best) {
-            best = score;
-            ans = ret;
-        }
+    string solve_a() {
+        return "0 0 RDLU";
     }
     
     // solution B: single line waver.
-    void solve_b() {
-        __reset(0, 0);
+    string solve_b() {
+        
         string ret = "0 0 ";
+        
+        int x = 0, y = 0;
         
         while(x + 2 <= n) {
             // if not begin, down 1 unit.
-            if(x > 0) { mov(1, ret); }
-
+            if(x > 0) {
+                ret += 'D';
+                x += 1;
+            }
+            
             // move right most.
-            while(y < n) { mov(0, ret); }
-            
+            while(y < n) {
+                ret += 'R';
+                y += 1;
+            }
             // down 1 unit on the right side.
-            mov(1, ret);
-            
+            ret += 'D';
+            x += 1;
             // move left to 1.
-            while(y > 1) { mov(2, ret); }
+            while(y > 1) {
+                ret += 'L';
+                y -= 1;
+            }
         }
         
-        // move left to 0.
-        while(y > 0) { mov(2, ret); }
-        
-        // move to top.
-        while(x > 0) { mov(3, ret); }
-        
-        int score = estimate();
-        if(score > best) {
-            best = score;
-            ans = ret;
+        while(y > 0) {
+            ret += 'L';
+            y -= 1;
         }
+        
+        while(x > 0) {
+            ret += 'U';
+            x -= 1;
+        }
+        
+        return ret;
     }
     
     // solution C: double line waver.
     string solve_c() {
         
         string ret = "0 0 ";
-        if(n % 4 > 0) {
-            __reset(1, 0);
-            ret[0] = '1';
-        }
-        else {
-            __reset(0, 0);
-        }
+        
+        int x = 0, y = 0;
         
         while(x + 4 <= n) {
             // if not begin, down 2 unit.
-            if(x > 0) { mov(1, ret); mov(1, ret); }
-
+            if(x > 0) {
+                ret += 'D';
+                ret += 'D';
+                x += 2;
+            }
+            
             // move right most.
-            while(y < n) { mov(0, ret); }
-            
-            // down 1 unit on the right side.
-            mov(1, ret); mov(1, ret);
-            
-            // move left to 1.
-            while(y > 2) { mov(2, ret); }
+            while(y < n) {
+                ret += 'R';
+                y += 1;
+            }
+            // down 2 unit on the right side.
+            ret += 'D';
+            ret += 'D';
+            x += 2;
+            // move left to 2.
+            while(y > 2) {
+                ret += 'L';
+                y -= 1;
+            }
         }
         
-        // move left to 0.
-        while(y > 0) { mov(2, ret); }
-        
-        // move to top.
-        while(x > cx) { mov(3, ret); }
-        
-        int score = estimate();
-        if(score > best) {
-            best = score;
-            ans = ret;
+        while(y > 0) {
+            ret += 'L';
+            y -= 1;
         }
+        
+        while(x > 0) {
+            ret += 'U';
+            x -= 1;
+        }
+        
+        if(n % 4 > 0) ret[0] = '1';
+        
+        return ret;
     }
     
 	// solve the puzzle with a given start point.
@@ -576,13 +558,21 @@ public:
     
     string findLoop(const vector<string> &diagram) {
         
+        
         __initialize(diagram);
-        
-        // ordinary try.
-        solve_a();
-        solve_b();
-        solve_c();
-        
+/*
+        if(n > 60) {
+            if(cnt[2] >= cnt[0] && cnt[2] >= cnt[1]) {
+                return solve_b();
+            }
+            else if(cnt[1] >= cnt[0] && cnt[1] >= cnt[2]) {
+                return solve_c();
+            }
+            else {
+                return ans;
+            }
+        }
+*/
 		while(double(clock() - start) / CLOCKS_PER_SEC < 9.0) {
 			solve(rand() % n, rand() % m);
 		}
