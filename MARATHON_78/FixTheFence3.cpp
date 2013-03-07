@@ -220,7 +220,7 @@ class FixTheFence {
                 switch(dg[i][j]) {
                     case 0:
                         if(edges == 0) {
-                            score += touch ? 3 : 3;
+                            score += 3;
                         }
                         break;
                     case 1:
@@ -445,7 +445,8 @@ system("pause");
             // key: score, value: direction.
             int mx_score = INT_MIN;
             int mx_len = -1;
-            int direction = -1;
+            int md1 = -1;
+            int md2 = -1;
             pair<int, vector<int> > trace;
             
             int x0 = x, y0 = y;
@@ -492,7 +493,7 @@ system("pause");
                                     mx_score = score;
                                     mx_len = len;
                                     trace = tc;
-                                    direction = d;
+                                    md1 = d;
                                 }
                             }
                         }
@@ -509,7 +510,7 @@ system("pause");
             if(mx_score == INT_MIN) break;
             
             // move the step.
-            mov(direction);
+            mov(md1);
             
             // regenerate the back trace.
             // remove the rear
