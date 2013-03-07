@@ -36,6 +36,10 @@ class FixTheFence {
     // records how many times a corner was visited.
     int cc[101][101];
     
+    // records how many sides a cell has.
+    int _ee[102][102];
+    inline int& ee(const int& xx, const int& yy) {return _ee[xx+1][yy+1];}
+    
     // records whether an edge was visited. 
     int hh[101][100];
     int vv[100][101];
@@ -106,6 +110,8 @@ class FixTheFence {
         memset(vv, 0, sizeof(vv));
         memset(bb, -1, sizeof(bb));
         memset(pr, -1, sizeof(pr));
+        memset(_ee, 0, sizeof(_ee));
+        
         bt.clear();
         path.clear();
         
@@ -142,10 +148,10 @@ class FixTheFence {
             cc[x][y] += 1;
             cc[xx][yy] += 1;
             switch(d) {
-                case 0: hh[x][y] = 1; break;
-                case 1: vv[x][y] = 1; break;
-                case 2: hh[xx][yy] = 1; break;
-                case 3: vv[xx][yy] = 1; break;
+                case 0: hh[x][y] = 1; ++ee(x-1,y); ++ee(x,y); break;
+                case 1: vv[x][y] = 1; ++ee(x,y-1); ++ee(x,y); break;
+                case 2: hh[xx][yy] = 1; ++ee(xx-1,yy); ++ee(xx,yy); break;
+                case 3: vv[xx][yy] = 1; ++ee(xx,yy-1); ++ee(xx,yy); break;
             }
             path += dd[d];
             x = xx;
@@ -170,10 +176,10 @@ class FixTheFence {
             cc[x][y] -= 1;
             cc[xx][yy] -= 1;
             switch(d) {
-                case 0: hh[xx][yy] = 0; break;
-                case 1: vv[xx][yy] = 0; break;
-                case 2: hh[x][y] = 0; break;
-                case 3: vv[x][y] = 0; break;
+                case 0: hh[xx][yy] = 0; --ee(xx-1,yy); --ee(xx,yy); break;
+                case 1: vv[xx][yy] = 0; --ee(xx,yy-1); --ee(xx,yy); break;
+                case 2: hh[x][y] = 0; --ee(x-1,y); --ee(x,y); break;
+                case 3: vv[x][y] = 0; --ee(x,y-1); --ee(x,y); break;
             }
             path.erase(len-1);
             x = xx;
@@ -183,87 +189,48 @@ class FixTheFence {
         return false;
     }
     
+    // return the score of a given position.
+    inline int pt(const int& xx, const int& yy) {
+        return xx>=0&&xx<n&&yy>=0&&yy<m && dg[xx][yy]==ee(xx,yy) ? 1 : 0;
+    }
+    
+    // return the score before a given move.
+    int pt1(const int& xx, const int& yy, const int& d) {
+        int xx1 = xx+dx[d], yy1 = yy+dy[d];
+        switch(d) {
+            case 0: return pt(xx-1,yy)+pt(xx,yy);
+            case 1: return pt(xx,yy-1)+pt(xx,yy);
+            case 2: return pt(xx1-1,yy1)+pt(xx1,yy1);
+            case 3: return pt(xx1,yy1-1)+pt(xx1,yy1);
+        }
+    }
+    // return the score after a given move.
+    inline int pt2(const int& xx, const int& yy, const int& d) {
+        int xx1 = xx-dx[d], yy1 = yy-dy[d];
+        switch(d) {
+            case 0: return pt(xx1-1,yy1)+pt(xx1,yy1);
+            case 1: return pt(xx1,yy1-1)+pt(xx1,yy1);
+            case 2: return pt(xx-1,yy)+pt(xx,yy);
+            case 3: return pt(xx,yy-1)+pt(xx,yy);
+        }
+        
+    }
+    
 	// estimates the final score of the current loop
 	int estimate() {
 		int score = 0;
         for(int i = 0; i < n; ++i)
             for(int j = 0; j < m; ++j)
-				score += (dg[i][j] == hh[i][j]+hh[i+1][j]+vv[i][j]+vv[i][j+1] ? 1 : 0);
+				score += pt(i,j);
 		return score;
 	}
 
     // evaluate the score in the range.
     int eval(int xa, int xb, int ya, int yb) {
-        // bound the range
-        xa = max(xa, 0);
-        ya = max(ya, 0);
-        xb = min(xb, n-1);
-        yb = min(yb, m-1);
-//printf("[%d, %d, %d, %d]\n", xa, xb, ya, yb);
-        // test
-//int old = 0;
         int score = 0;
-        for(int i = xa; i <= xb; ++i) {
-//cout << "i = " << i << endl;
-            for(int j = ya; j <= yb; ++j) {
-
-//cout << "j = " << j << endl;
-                int edges = hh[i][j] + hh[i+1][j] + vv[i][j] + vv[i][j+1];
-                int dots = (cc[i][j]>0?1:0) + (cc[i][j+1]>0?1:0)
-                        + (cc[i+1][j]>0?1:0) + (cc[i+1][j+1]>0?1:0);
-                bool touch = (x==i||x==i+1) && (y==j||y==j+1);
-                // scoring comments:
-                // 0: broken cell
-                // 1: unfinished cell, not touched, unbroken
-                // 2: unfinished cell, touched, unbroken
-                // 3: finished cell
-                switch(dg[i][j]) {
-                    case 0:
-                        if(edges == 0) {
-                            score += 2;
-                        }
-                        break;
-                    case 1:
-                        if(edges == 1) {
-                            score += 2;
-                        }
-                        else if(edges == 0 && dots < 4 && touch) {
-                            score += 2;
-                        }
-                        else if(edges == 0 && dots == 0) {
-                            score += 1;
-                        }
-                        break;
-                    case 2:
-                        if(edges == 2) {
-                            score += 2;
-                        }
-                        else if(edges == 1 && dots < 4 && touch) {
-                            score += 2;
-                        }
-                        else if(edges < 2 && dots < 4) {
-                            score += 1;
-                        }
-                        break;
-                    case 3:
-                        if(edges == 3) {
-                            score += 2;
-                        }
-                        else if(touch && (edges == 2 && dots == 3
-                                    || edges == 1 && dots == 2
-                                    || edges == 0 && dots == 1)) {
-                            score += 2;
-                        }
-                        else if(!touch && dots == 0) {
-                            score += 1;
-                        }
-                        break;
-                }
-//cout << score-old;
-//old = score;
-            }
-//cout << endl;
-        }
+        for(int i = xa; i <= xb; ++i)
+            for(int j = ya; j <= yb; ++j)
+                score += pt(i, j);
         return score;
     }
     
@@ -300,7 +267,7 @@ class FixTheFence {
             int xx = ux(zz), yy = uy(zz);
             q.pop_front();
             // controlling bfs depth
-            if(depth > 4) continue;
+            //if(depth > 4) continue;
             // search next.
             for(int d = 0; d < 4; ++d) {
                 xx += dx[d];
@@ -445,18 +412,24 @@ system("pause");
             // key: score, value: direction.
             int mx_score = INT_MIN;
             int mx_len = -1;
-            int direction = -1;
+            int mx_d = -1;
             pair<int, vector<int> > trace;
             
             int x0 = x, y0 = y;
             
+            // follow the score.
+            int score = 0;
+
             // try the four direction (in fact 3 at most), and evaluate
             // the estimated score.
             for(int d = 0; d < 4; ++d) {
-
+                
+                int score_d = INT_MIN;
+                
+                score -= pt1(x,y,d);
                 // try the direction.
                 if(mov(d)) {
-                    
+                    score += pt2(x,y,d);
 					// solution founded.
 				    if(cc[x][y] == 2) {
 //////////////////solution/////////////////////
@@ -468,19 +441,59 @@ system("pause");
 					else {
 /////////////////evaluation/////////////////////
 
-                        // evaluate score first.
-                        int score = 0;
                         // trace two steps, get the two step score, but move one step.
                         for(int d2 = 0; d2 < 4; ++d2) {
                             if(d2-d==2||d-d2==2) continue;
+                            score -= pt1(x,y,d2);
                             if(mov(d2)) {
-                                score = max(score, eval(x0-5, x0+5, y0-5, y0+5));
+                                score += pt2(x,y,d2);
+                                        /*
+                                for(int d3 = 0; d3 < 4; ++d3) {
+                                    if(d2-d3==2||d3-d2==2) continue;
+                                    score -= pt1(x,y,d3);
+                                    if(mov(d3)) {
+                                        score += pt2(x,y,d3);
+                                        for(int d4 = 0; d4 < 4; ++d4) {
+                                            if(d4-d3==2||d3-d4==2) continue;
+                                            score -= pt1(x,y,d4);
+                                            if(mov(d4)) {
+                                                score += pt2(x,y,d4);
+                                                
+                                                
+                                                for(int d5 = 0; d5 < 4; ++d5) {
+                                                    if(d4-d5==2||d5-d4==2) continue;
+                                                    score -= pt1(x,y,d5);
+                                                    if(mov(d5)) {
+                                                        score += pt2(x,y,d5);
+                                        */
+                                                        score_d = max(score_d, score);
+                                        /*                
+                                                        score -= pt2(x,y,d5);
+                                                        rem();
+                                                    }
+                                                    score += pt1(x,y,d5);
+                                                }
+                                        
+                                                score -= pt2(x,y,d4);
+                                                rem();
+                                            }
+                                            score += pt1(x,y,d4);
+                                        }
+                                        
+                                        score -= pt2(x,y,d3);
+                                        rem();
+                                    }
+                                    score += pt1(x,y,d3);
+                                }
+                                        */
+                                score -= pt2(x,y,d2);
                                 rem();
                             }
+                            score += pt1(x,y,d2);
                         }
 //cout << "score: " << score << ", dir: " << dd[d] << endl;
                         
-                        if(score >= mx_score) {
+                        if(score_d >= mx_score) {
                             // find path next.
                             pair<int, vector<int> > tc = get_trace();
                             
@@ -492,7 +505,7 @@ system("pause");
                                     mx_score = score;
                                     mx_len = len;
                                     trace = tc;
-                                    direction = d;
+                                    mx_d = d;
                                 }
                             }
                         }
@@ -501,15 +514,17 @@ system("pause");
                     }
                     
                     // retract the try.
+                    score -= pt2(x,y,d);
                     rem();
                 }
+                score += pt1(x,y,d);
             }
             
             // if no more solution, exit.
             if(mx_score == INT_MIN) break;
             
             // move the step.
-            mov(direction);
+            mov(mx_d);
             
             // regenerate the back trace.
             // remove the rear
@@ -532,6 +547,8 @@ public:
     
     string findLoop(const vector<string> &diagram) {
         
+        srand(time(0));
+        
         __initialize(diagram);
         
         // ordinary try.
@@ -551,7 +568,8 @@ public:
 // tester
 
 int main() {
-    srand(time(0));
+    
+    //srand(time(0));
     int SZ;
     
     cin >> SZ;
