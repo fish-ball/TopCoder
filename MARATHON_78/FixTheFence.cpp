@@ -220,12 +220,12 @@ class FixTheFence {
                 switch(dg[i][j]) {
                     case 0:
                         if(edges == 0) {
-                            score += touch ? 3 : 3;
+                            score += 2;
                         }
                         break;
                     case 1:
                         if(edges == 1) {
-                            score += 3;
+                            score += 2;
                         }
                         else if(edges == 0 && dots < 4 && touch) {
                             score += 2;
@@ -236,7 +236,7 @@ class FixTheFence {
                         break;
                     case 2:
                         if(edges == 2) {
-                            score += 3;
+                            score += 2;
                         }
                         else if(edges == 1 && dots < 4 && touch) {
                             score += 2;
@@ -247,7 +247,7 @@ class FixTheFence {
                         break;
                     case 3:
                         if(edges == 3) {
-                            score += 3;
+                            score += 2;
                         }
                         else if(touch && (edges == 2 && dots == 3
                                     || edges == 1 && dots == 2
@@ -551,7 +551,7 @@ public:
 // tester
 
 int main() {
-    
+    srand(time(0));
     int SZ;
     
     cin >> SZ;
