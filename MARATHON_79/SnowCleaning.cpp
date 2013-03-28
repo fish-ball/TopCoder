@@ -5,8 +5,10 @@ using namespace std;
 class SnowCleaning {
 public:
     int init(int boardSize, int salary, int snowFine) {
+        return 0;
     }
     vector <string> nextDay(vector <int> snowFalls) {
+        return vector<string>(0);
     }
 };
 
