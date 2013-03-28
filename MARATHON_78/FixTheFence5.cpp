@@ -120,17 +120,17 @@ class FixTheFence {
     
     // get solution according to the cx, cy and path.
     string get_result() {
-		sprintf(sbuf, "%d %d %s", cx, cy, path.c_str());
-		return sbuf;
+        sprintf(sbuf, "%d %d %s", cx, cy, path.c_str());
+        return sbuf;
     }
     
     // commit solution and update the best.
     void commit() {
-		int score = estimate();
-		if(score > best) {
-			best = score;
-			ans = get_result();
-		}
+        int score = estimate();
+        if(score > best) {
+            best = score;
+            ans = get_result();
+        }
     }
     
     // move and trace as the direction.
@@ -183,14 +183,14 @@ class FixTheFence {
         return false;
     }
     
-	// estimates the final score of the current loop
-	int estimate() {
-		int score = 0;
+    // estimates the final score of the current loop
+    int estimate() {
+        int score = 0;
         for(int i = 0; i < n; ++i)
             for(int j = 0; j < m; ++j)
-				score += (dg[i][j] == hh[i][j]+hh[i+1][j]+vv[i][j]+vv[i][j+1] ? 1 : 0);
-		return score;
-	}
+                score += (dg[i][j] == hh[i][j]+hh[i+1][j]+vv[i][j]+vv[i][j+1] ? 1 : 0);
+        return score;
+    }
 
     // evaluate the score in the range.
     int eval(int xa, int xb, int ya, int yb) {
@@ -301,6 +301,29 @@ class FixTheFence {
             q.pop_front();
             // controlling bfs depth
             if(depth > 4) continue;
+                                   
+/*
+for(int i = 0; i <= n; ++i) {
+for(int j = 0; j <= m; ++j) {
+    cout << char(cc[i][j]<0?'.':'0'+cc[i][j]);
+}cout << endl;
+}cout<<endl;
+//
+//cout << dd[d] << endl;
+for(int i = 0; i <= n; ++i) {
+for(int j = 0; j <= m; ++j) {
+    cout << char(pr[i][j]==-1?'.':'#');
+}cout << endl;
+}cout<<endl;
+//
+for(int i = 0; i < bt.size(); ++i) printf("(%d, %d) ", ux(bt[i]), uy(bt[i]));cout << endl;
+for(int i = 0; i <= n; ++i) {
+for(int j = 0; j <= m; ++j) {
+    cout << char(bb[i][j]==-1?'.':'0'+bb[i][j]);
+}cout << endl;
+}
+system("pause");
+//*/
             // search next.
             for(int d = 0; d < 4; ++d) {
                 xx += dx[d];
@@ -312,6 +335,8 @@ class FixTheFence {
                     if(bb[xx][yy] != -1 && bb[xx][yy] < bound) {
                         // return the trace.
                         ret.first = bb[xx][yy];
+//cout << "found: " << ret.first << endl;
+//system("pause");
                         xx -= dx[d];
                         yy -= dy[d];
                         while(pr[xx][yy] != zip(xx, yy)) {
@@ -321,10 +346,12 @@ class FixTheFence {
                             zz = pr[xx][yy];
                             xx = ux(zz);
                             yy = uy(zz);
+//printf("(%d, %d)\n", xx, yy);
+//system("pause");
                         }
  
-                		// clear the bfs marks efficiently
-                		for(int i = 0; i < er.size(); ++i) {
+                        // clear the bfs marks efficiently
+                        for(int i = 0; i < er.size(); ++i) {
                             pr[ux(er[i])][uy(er[i])] = -1;
                         }
                         return ret;
@@ -340,8 +367,8 @@ class FixTheFence {
                 yy -= dy[d];
             }
         }
-		// clear the bfs marks efficiently
-		for(int i = 0; i < er.size(); ++i) {
+        // clear the bfs marks efficiently
+        for(int i = 0; i < er.size(); ++i) {
             pr[ux(er[i])][uy(er[i])] = -1;
         }
         // in this case, no path found, key of ret is -1.
@@ -401,39 +428,9 @@ class FixTheFence {
         commit();
     }
     
-    // solution D: double line waver.
-    void solve_d() {
-        // reset start point;
-        __reset(0, 0);
-        int d = 0;
-        while(mov(0));
-        while(mov(1));
-        while(mov(2));
-        while(mov(3));
-        rem();rem();
-        while(true) {
-            int k = 0;
-            while(mov(d)) ++k;
-            if(k > 1) {
-                rem();
-                d = (d+1)&3;
-            }
-            else {
-                break;
-            }
-        }
-        while(true) {
-            while(mov(d));
-            d = (d+3)&3;
-            if(x==1&&y==0) break;
-        }
-        mov(3);
-        commit();
-    }
-    
-	// solve the puzzle with a given start point.
-	void solve(int x_start, int y_start) {
-		
+    // solve the puzzle with a given start point.
+    void solve(int x_start, int y_start) {
+        
         __reset(x_start, y_start);
 
         while(true) {
@@ -452,8 +449,7 @@ system("pause");
             // key: score, value: direction.
             int mx_score = INT_MIN;
             int mx_len = -1;
-            int md1 = -1;
-            int md2 = -1;
+            int direction = -1;
             pair<int, vector<int> > trace;
             
             int x0 = x, y0 = y;
@@ -465,15 +461,15 @@ system("pause");
                 // try the direction.
                 if(mov(d)) {
                     
-					// solution founded.
-				    if(cc[x][y] == 2) {
+                    // solution founded.
+                    if(cc[x][y] == 2) {
 //////////////////solution/////////////////////
 //cout << "solution found!!!" << endl;
                         // commit the solution.
                         commit();
 /////////////////end solution/////////////////////
-					}
-					else {
+                    }
+                    else {
 /////////////////evaluation/////////////////////
 
                         // evaluate score first.
@@ -482,7 +478,7 @@ system("pause");
                         for(int d2 = 0; d2 < 4; ++d2) {
                             if(d2-d==2||d-d2==2) continue;
                             if(mov(d2)) {
-                                score = max(score, eval(x0-5, x0+5, y0-5, y0+5));
+                                score = max(score, eval(x0-4, x0+4, y0-4, y0+4));
                                 rem();
                             }
                         }
@@ -500,7 +496,7 @@ system("pause");
                                     mx_score = score;
                                     mx_len = len;
                                     trace = tc;
-                                    md1 = d;
+                                    direction = d;
                                 }
                             }
                         }
@@ -517,7 +513,7 @@ system("pause");
             if(mx_score == INT_MIN) break;
             
             // move the step.
-            mov(md1);
+            mov(direction);
             
             // regenerate the back trace.
             // remove the rear
@@ -555,9 +551,6 @@ public:
         return ans;
     }
 };
-
-// tester
-
 int main() {
     
     int SZ;
@@ -582,3 +575,4 @@ int main() {
     return 0;
     
 }
+

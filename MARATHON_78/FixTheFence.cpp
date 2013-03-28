@@ -40,6 +40,8 @@ class FixTheFence {
     int _ee[102][102];
     inline int& ee(const int& xx, const int& yy) {return _ee[xx+1][yy+1];}
     
+    inline int dt(const int& xx, const int& yy) {return (cc[xx][yy]?1:0)+(cc[xx+1][yy]?1:0)+(cc[xx][yy+1]?1:0)+(cc[xx+1][yy+1]?1:0);}
+    
     // records whether an edge was visited. 
     int hh[101][100];
     int vv[100][101];
@@ -141,6 +143,8 @@ class FixTheFence {
     
     // move and trace as the direction.
     bool mov(int d) {
+        // if ended, never move.
+        if(cc[x][y] == 2) return false;
         // the next position
         int xx = x+dx[d], yy = y+dy[d];
         // next position must be inside and not fully visited.
@@ -230,7 +234,34 @@ class FixTheFence {
         int score = 0;
         for(int i = xa; i <= xb; ++i)
             for(int j = ya; j <= yb; ++j)
-                score += pt(i, j);
+                score += 3*pt(i, j);
+        //*
+        for(int i = x-1; i<=x; ++i) {
+            for(int j = y-1; j<=y; ++j) {
+                if(i>=0&&i<n&&j>=0&&j<m) {
+                    switch(dg[i][j]) {
+                        case 0:
+                            if(ee(i,j)==0 && dt(i,j)<4)score--;
+                            break;
+                        case 1:
+                            if(ee(i,j)==1 && dt(i,j)<4)score--;
+                            if(ee(i,j)==1 && (x==0||x==n)&&(y==0||y==m))score--;
+                            break;
+                        case 2:
+                            if(ee(i,j)==2 && dt(i,j)<4)score--;
+                            if(ee(i,j)==1 && dt(i,j)<4)score++;
+                            if(ee(i,j)==0 && dt(i,j)<3)score++;
+                            break;
+                        case 3:
+                            if(ee(i,j)==2 && dt(i,j)==3)score++;
+                            if(ee(i,j)==1 && dt(i,j)==2)score++;
+                            if(ee(i,j)==0 && dt(i,j)==1)score++;
+                            break;
+                    }
+                }
+            }
+        }
+        //*/
         return score;
     }
     
@@ -372,22 +403,29 @@ class FixTheFence {
     void solve_d() {
         // reset start point;
         __reset(0, 0);
-        // each second row go and come.
-        while(x + 4 <= n) {
-            // if not the first row, down 2 unit.
-            if(x > cx) { mov(1); mov(1); }
-            // move right most.
-            while(y < m) mov(0);
-            // down 2 unit on the right side.
-            mov(1); mov(1);
-            // move left to 2.
-            while(y > 2) mov(2);
+        int d = 0;
+        while(mov(0));
+        while(mov(1));
+        while(mov(2));
+        while(mov(3));
+        rem();rem();
+        while(true) {
+            int k = 0;
+            while(mov(d)) ++k;
+            if(k > 1) {
+                rem();
+                d = (d+1)&3;
+            }
+            else {
+                break;
+            }
         }
-        // move left to 0.
-        while(y > 0) mov(2);
-        // move to top.
-        while(x > cx) mov(3);
-        // commit solution.
+        while(true) {
+            while(mov(d));
+            d = (d+3)&3;
+            if(x==1&&y==0) break;
+        }
+        mov(3);
         commit();
     }
     
@@ -397,127 +435,58 @@ class FixTheFence {
         __reset(x_start, y_start);
 
         while(true) {
-
-//cout << path << endl << endl;
-/*
-cout << "cx: " << cx << ", cy: " << cy << endl;
-
-for(int i = 0; i <= n; ++i) {
-for(int j = 0; j <= m; ++j) {
-    cout << char(cc[i][j]<0?'.':'0'+cc[i][j]);
-}cout << endl;
-}
-system("pause");
-//*/
             // key: score, value: direction.
             int mx_score = INT_MIN;
+            int mx_rep = 0; 
             int mx_len = -1;
             int mx_d = -1;
+            int mx_chs = 0;
             pair<int, vector<int> > trace;
             
             int x0 = x, y0 = y;
-            
-            // follow the score.
-            int score = 0;
 
             // try the four direction (in fact 3 at most), and evaluate
             // the estimated score.
             for(int d = 0; d < 4; ++d) {
-                
-                int score_d = INT_MIN;
-                
-                score -= pt1(x,y,d);
                 // try the direction.
                 if(mov(d)) {
-                    score += pt2(x,y,d);
 					// solution founded.
-				    if(cc[x][y] == 2) {
-//////////////////solution/////////////////////
-//cout << "solution found!!!" << endl;
-                        // commit the solution.
-                        commit();
-/////////////////end solution/////////////////////
-					}
-					else {
-/////////////////evaluation/////////////////////
+				    if(cc[x][y] == 2) commit();
+				    
+                    int score_d = INT_MIN;
 
-                        // trace two steps, get the two step score, but move one step.
-                        for(int d2 = 0; d2 < 4; ++d2) {
-                            if(d2-d==2||d-d2==2) continue;
-                            score -= pt1(x,y,d2);
-                            if(mov(d2)) {
-                                score += pt2(x,y,d2);
-                                        /*
-                                for(int d3 = 0; d3 < 4; ++d3) {
-                                    if(d2-d3==2||d3-d2==2) continue;
-                                    score -= pt1(x,y,d3);
-                                    if(mov(d3)) {
-                                        score += pt2(x,y,d3);
-                                        for(int d4 = 0; d4 < 4; ++d4) {
-                                            if(d4-d3==2||d3-d4==2) continue;
-                                            score -= pt1(x,y,d4);
-                                            if(mov(d4)) {
-                                                score += pt2(x,y,d4);
-                                                
-                                                
-                                                for(int d5 = 0; d5 < 4; ++d5) {
-                                                    if(d4-d5==2||d5-d4==2) continue;
-                                                    score -= pt1(x,y,d5);
-                                                    if(mov(d5)) {
-                                                        score += pt2(x,y,d5);
-                                        */
-                                                        score_d = max(score_d, score);
-                                        /*                
-                                                        score -= pt2(x,y,d5);
-                                                        rem();
-                                                    }
-                                                    score += pt1(x,y,d5);
-                                                }
-                                        
-                                                score -= pt2(x,y,d4);
-                                                rem();
-                                            }
-                                            score += pt1(x,y,d4);
-                                        }
-                                        
-                                        score -= pt2(x,y,d3);
-                                        rem();
-                                    }
-                                    score += pt1(x,y,d3);
-                                }
-                                        */
-                                score -= pt2(x,y,d2);
-                                rem();
-                            }
-                            score += pt1(x,y,d2);
-                        }
-//cout << "score: " << score << ", dir: " << dd[d] << endl;
-                        
-                        if(score_d >= mx_score) {
-                            // find path next.
-                            pair<int, vector<int> > tc = get_trace();
-                            
-//cout << tc.first << endl;
-//system("pause");
-                            if(tc.first > -1) {
-                                int len = tc.first + tc.second.size();
-                                if(score>mx_score || score==mx_score && len>mx_len) {
-                                    mx_score = score;
-                                    mx_len = len;
-                                    trace = tc;
-                                    mx_d = d;
+                    // trace two steps, get the two step score, but move one step.
+                    for(int d2 = 0; d2 < 4; ++d2) {
+                        if(d2-d==2||d-d2==2) continue;
+                        if(mov(d2)) {
+			                if(cc[x][y] == 2) commit();
+                            for(int d3 = 0; d3 < 4; ++d3) {
+                                if(d2-d3==2||d3-d2==2) continue;
+                                if(mov(d3)) {
+			                        if(cc[x][y] == 2) commit();
+			                        score_d = max(score_d, eval(x-4,x+4,y-4,y+4));
+                                    rem();
                                 }
                             }
+                            rem();
                         }
-                        
-////////////////evaluation/////////////////////
                     }
                     
-                    // retract the try.
-                    score -= pt2(x,y,d);
+                    if(score_d >= mx_score) {
+                        // find path next.
+                        pair<int, vector<int> > tc = get_trace();
+                        if(tc.first > -1) {
+                            int len = tc.first + tc.second.size();
+                            if(score_d>mx_score || score_d==mx_score && len>mx_len) {
+                                mx_score = score_d;
+                                mx_len = len;
+                                trace = tc;
+                                mx_d = d;
+                            }
+                        }
+                    }
                     rem();
                 }
-                score += pt1(x,y,d);
             }
             
             // if no more solution, exit.
@@ -542,7 +511,6 @@ system("pause");
             }
         }
     }
-
 public:
     
     string findLoop(const vector<string> &diagram) {
@@ -552,9 +520,10 @@ public:
         __initialize(diagram);
         
         // ordinary try.
-        solve_a();
-        solve_b();
-        solve_c();
+        //solve_a();
+        //solve_b();
+        //solve_c();
+        //solve_d();
         
         while(double(clock() - start) / CLOCKS_PER_SEC < 9.0) {
             solve(rand() % n, rand() % m);
