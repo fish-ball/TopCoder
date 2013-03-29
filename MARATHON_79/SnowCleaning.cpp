@@ -35,22 +35,18 @@ STRATEGY:
 
 */
 
-
 //二分图最佳匹配,kuhn munkras算法,邻接阵形式,复杂度O(m*m*n)
 //返回最佳匹配值,传入二分图大小m,n和邻接阵mat,表示权值
 //match1,match2返回一个最佳匹配,未匹配顶点match值为-1
 //一定注意m<=n,否则循环无法终止
 //最小权匹配可将权值取相反数
 #include <string.h>
+#define MAXN 2500
 #define inf 1000000000
 #define _clr(x) memset(x,0xff,sizeof(int)*n)
 
-char mat[100][2500];
-int match1[100];
-int match2[2500];
-
-int kuhn_munkras(int m,int n){
-	int s[2500],t[2500],l1[2500],l2[2500],p,q,ret=0,i,j,k;
+int kuhn_munkras(int m,int n,int mat[][MAXN],int* match1,int* match2){
+	int s[MAXN],t[MAXN],l1[MAXN],l2[MAXN],p,q,ret=0,i,j,k;
 	for (i=0;i<m;i++)
 		for (l1[i]=-inf,j=0;j<n;j++)
 			l1[i]=mat[i][j]>l1[i]?mat[i][j]:l1[i];
@@ -86,28 +82,32 @@ int kuhn_munkras(int m,int n){
 #include <string>
 #include <iostream>
 #include <vector>
+#include <deque>
 #include <algorithm>
 using namespace std;
 
-#define X(pos) (pos>>16)
-#define Y(pos) (pos&0xFFFF)
-#define P(x,y) ((x<<16)|y)
-#define dist(p1,p2) (abs(X(p1)-X(p2))+abs(Y(p1)-Y(p2)))
-#define _inside(x,y) (0<=x&&x<n&&0<=y&&y<n)
-#define inside(pos) _inside(X(pos),Y(pos))
-#define mov(dir,pos) (pos+dd[dir])
-#define rem(dir,pos) (pos-dd[dir])
+
 
 const char* dc = "RDLU";
-const int dd[] = {65536, 1, -65536, -1};
+const int dx[] = {0, 1, 0, -1};
+const int dy[] = {1, 0, -1, 0};
 char buf[20];
 
+
 class SnowCleaning {
+    
+    
+int mat[100][2500];
+int match1[100];
+int match2[2500];
+
+
     
     // boardSize
     int n;
     // time
     int t;
+    int sun;
     // total snow fall accumulated
     int sna;
     // max worker estimation
@@ -117,88 +117,235 @@ class SnowCleaning {
     // snowFine cost
     int co;
     
+    
+    struct Pos {
+        Pos() : x(0), y(0) {};
+        Pos(int x, int y) : x(x), y(y) {};
+        short x;
+        short y;
+        
+        Pos move(int d) {
+            return Pos(x+dx[d], y+dy[d]);
+        }
+        
+        bool inside(int n) {
+            return 0<=x && x<n && 0<=y && y<n;
+        }
+    };
+
+
+    int dist(Pos a, Pos b) {
+        return abs(a.x-b.x)+abs(a.y-b.y);
+    }
+    
     // workers
     int w[50][50];
-    vector<int> wk;
+    vector<Pos> wk;
     // snow
-    bool s[50][50];
-    vector<int> sn;
+    int s[50][50];
+    vector<Pos> sn;
+    
+    // result pool
+    vector<string> ans;
+    
+    
+    
+    // snow falls.
+    bool fall(int x, int y) {
+        if(s[x][y] == -1) {
+            s[x][y] = sn.size();
+            sn.push_back(Pos(x,y));
+            return true;
+        }
+        return false;
+    }
+    
+    // hire a worker.
+    bool hire(int x, int y) {
+        if(w[x][y] == -1) {
+            w[x][y] = wk.size();
+            wk.push_back(Pos(x, y));
+            // log the operation
+            sprintf(buf, "H %d %d", x, y);
+            ans.push_back(buf);
+            sweep(x, y);
+            return true;
+        }
+        return false;
+    }
+    
+    // sweep a snow.
+    bool sweep(int x, int y) {
+        if(s[x][y] != -1) {
+            sn[s[x][y]] = Pos(-1, -1);
+            s[x][y] = -1;
+            return true;
+        }
+        return false;
+    }
+
+    // tidy the snow structure, remove the swap cell.
+    void tidy_snow() {
+        int m = 0;
+        for(int i = 0; i < sn.size(); ++i) {
+            if(sn[i].x > -1) {
+                s[sn[i].x][sn[i].y] = m;
+                sn[m++] = sn[i];
+            }
+        }
+        sn.resize(m);
+    }
+    
+    // let worker k move towards direction d.
+    inline bool walk(int k, int d) {
+//printf("walk: %d %c", k, dc[d]);
+        Pos p0 = wk[k], p = p0.move(d);
+        if(p.inside(n) && w[p.x][p.y] == -1) {
+            wk[k] = p;
+            w[p.x][p.y] = k;
+            w[p0.x][p0.y] = -1;
+            // after move, sweep the snow immediately
+            sweep(p.x, p.y);
+            // log the operation
+            sprintf(buf, "M %d %c", k, dc[d]);
+            ans.push_back(buf);
+            return true;
+        }
+        return false;
+    }
     
 public:
     int init(int boardSize, int salary, int snowFine) {
         // Initialize the parameters.
         n = boardSize;
         t = 0;
+        sun = 0;
         sna = 0;
         sa = salary;
         co = snowFine;
-        mw = 10;
+        mw = 5;
         memset(w, -1, sizeof(w));
-        wk.resize(0);
-        memset(s, 0, sizeof(s));
-        sn.resize(0);
+        wk.clear();
+        memset(s, -1, sizeof(s));
+        sn.clear();
         
         return 0;
     }
     vector<string> nextDay(vector<int> snowFalls) {
+
         // result pool.
-        vector<string> ans(0);
-        
+        ans.clear();
+
         // new snow fall count.
         int k2 = snowFalls.size(), k = (k2>>1);
-        
+
         // estimates the max workers.
         sna += k;
         t += 1;
-        mw = max(mw, sna * co / t / sa);
-        mw = min(mw, 100);
-        
+        sun += k2 == 0 ? 1 : 0;
+        if(sna > 0) {
+        //    mw = max(mw, sna * co / ((t - sun) * sa) + 1);
+        //    mw = min(mw, 100);
+        }
+
         // snow falls.
-        for(int i = 0, x, y; i < k2; i += 2) {
-            x = snowFalls[i];
-            y = snowFalls[i+1];
-            if(!s[x][y]) {
-                s[x][y] = true;
-                sn.push_back(P(x,y));
-            }
+        for(int i = 0; i < k2; i += 2) {
+            fall(snowFalls[i], snowFalls[i+1]);
         }
-        
-        // hire workers
-        if(mw - wk.size() > 0) {
-            bool _w[100] = {};
-            for(int i = 0, p, x, y; i < sn.size() && mw - wk.size() > 0; ++i) {
-                p = sn[i];
-                x = X(p);
-                y = Y(p);
-                if(w[x][y] == -1) {
-                    w[x][y] = wk.size();
-                    wk.push_back(p);
-                    sprintf(buf, "H %d %d", x, y);
-                    ans.push_back(buf);
-                }
-            }
-        }
-        
+/*
+for(int i = 0; i < n; ++i) {
+    for(int j = 0; j < n; ++j) {
+        cout << (s[i][j] == -1 ? '.' : '#');
+    }
+    cout << endl;
+}
+cout << "sn: ";
+        for(int i = 0; i < sn.size(); ++i) {
+            printf("(%d, %d) ", X(sn[i]), Y(sn[i]));
+        }cout << endl;
+cout << "wk: ";
+        for(int i = 0; i < wk.size(); ++i) {
+            printf("(%d, %d) ", X(wk[i]), Y(wk[i]));
+        }cout << endl;
+//*/
         // assignment
         memset(mat, 0, sizeof(mat));
+        if(wk.size() <= sn.size()) {
+            for(int i = 0; i < wk.size(); ++i) {
+                for(int j = 0; j < sn.size(); ++j) {
+                    int dst = dist(wk[i], sn[j]);
+                    //mat[i][j] = -(dst<<16) - dst*dst;
+                    mat[i][j] = -dst;
+                }
+            }
+            kuhn_munkras(wk.size(), sn.size(), mat, match1, match2);
+        }
+        else {
+            for(int i = 0; i < sn.size(); ++i) {
+                for(int j = 0; j < wk.size(); ++j) {
+                    int dst = dist(wk[i], sn[j]);
+                    //mat[i][j] = -(dst<<16) - dst*dst;
+                    mat[i][j] = -dst;
+                }
+            }
+            kuhn_munkras(sn.size(), wk.size(), mat, match2, match1);
+        }
+        
+//cout << "match1: "; for(int i = 0; i < wk.size(); ++i) cout << match1[i] << ' '; cout << endl;
+//cout << "match2: "; for(int j = 0; j < sn.size(); ++j) cout << match2[j] << ' '; cout << endl;
+        
+        
+        deque<int> q(0);
         for(int i = 0; i < wk.size(); ++i) {
-            for(int j = 0; j < sn.size(); ++j) {
-                mat[i][j] = -dist(wk[i], sn[j]);
+            if(match1[i] > -1) {
+                q.push_back(i);
             }
         }
         
-        kuhn_munkras(wk.size(), sn.size());
-        
-        for(int i = 0; i < wk.size(); ++i) cout << match1[i] << ' '; cout << endl;
-        for(int j = 0; j < sn.size(); ++j) cout << match2[j] << ' '; cout << endl;
         
         
+        int skip = 0;
+        while(skip < q.size()) {
+            int k = q.front();
+            q.pop_front();
+            // source position.
+            Pos sp = wk[k];
+            // target position.
+            Pos tp = sn[match1[k]];
+            
+            if(tp.y > sp.y && walk(k, 0) ||
+                tp.x > sp.x && walk(k, 1) ||
+                tp.y < sp.y && walk(k, 2) ||
+                tp.x < sp.x && walk(k, 3)) {
+                skip = 0;
+            }
+            else {
+                q.push_back(k);
+                ++skip;
+            }
+        }
+        
+        
+        tidy_snow();
+
+
+        // hire workers.
+        for(int i = 0, x, y; i < sn.size() && mw > wk.size(); ++i) {
+            x = sn[i].x;
+            y = sn[i].y;
+            if(w[x][y] == -1) {
+                hire(x, y);
+            }
+        }
+        
+        tidy_snow();
         
         return ans;
     }
 };
 
 int main() {
+    
     SnowCleaning sc;
     
     int n, s, c;
