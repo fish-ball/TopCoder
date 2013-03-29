@@ -84,6 +84,7 @@ int kuhn_munkras(int m,int n,int mat[][MAXN],int* match1,int* match2){
 #include <vector>
 #include <deque>
 #include <algorithm>
+#include <fstream>
 using namespace std;
 
 
@@ -91,7 +92,7 @@ using namespace std;
 const char* dc = "RDLU";
 const int dx[] = {0, 1, 0, -1};
 const int dy[] = {1, 0, -1, 0};
-char buf[20];
+char sbuf[20];
 
 
 class SnowCleaning {
@@ -166,8 +167,8 @@ int match2[2500];
             w[x][y] = wk.size();
             wk.push_back(Pos(x, y));
             // log the operation
-            sprintf(buf, "H %d %d", x, y);
-            ans.push_back(buf);
+            sprintf(sbuf, "H %d %d", x, y);
+            ans.push_back(sbuf);
             sweep(x, y);
             return true;
         }
@@ -207,8 +208,8 @@ int match2[2500];
             // after move, sweep the snow immediately
             sweep(p.x, p.y);
             // log the operation
-            sprintf(buf, "M %d %c", k, dc[d]);
-            ans.push_back(buf);
+            sprintf(sbuf, "M %d %c", k, dc[d]);
+            ans.push_back(sbuf);
             return true;
         }
         return false;
@@ -223,7 +224,7 @@ public:
         sna = 0;
         sa = salary;
         co = snowFine;
-        mw = 5;
+        mw = 2;
         memset(w, -1, sizeof(w));
         wk.clear();
         memset(s, -1, sizeof(s));
@@ -243,29 +244,34 @@ public:
         sna += k;
         t += 1;
         sun += k2 == 0 ? 1 : 0;
+        
         if(sna > 0) {
-        //    mw = max(mw, sna * co / ((t - sun) * sa) + 1);
-        //    mw = min(mw, 100);
+            mw = max(mw, sna * co / ((t - sun) * sa));
+            mw = min(mw, 40);
         }
 
         // snow falls.
         for(int i = 0; i < k2; i += 2) {
             fall(snowFalls[i], snowFalls[i+1]);
         }
+        
+//        mw = max(int(sn.size()), mw) / 2;
+//        mw = min(mw, 100);
+        
 /*
 for(int i = 0; i < n; ++i) {
     for(int j = 0; j < n; ++j) {
-        cout << (s[i][j] == -1 ? '.' : '#');
+        cout << (w[i][j]==-1?(s[i][j] == -1 ? '.' : '#'):'X');
     }
     cout << endl;
 }
 cout << "sn: ";
         for(int i = 0; i < sn.size(); ++i) {
-            printf("(%d, %d) ", X(sn[i]), Y(sn[i]));
+            printf("(%d, %d) ", sn[i].x, sn[i].y);
         }cout << endl;
 cout << "wk: ";
         for(int i = 0; i < wk.size(); ++i) {
-            printf("(%d, %d) ", X(wk[i]), Y(wk[i]));
+            printf("(%d, %d) ", wk[i].x, wk[i].y);
         }cout << endl;
 //*/
         // assignment
@@ -274,8 +280,8 @@ cout << "wk: ";
             for(int i = 0; i < wk.size(); ++i) {
                 for(int j = 0; j < sn.size(); ++j) {
                     int dst = dist(wk[i], sn[j]);
-                    //mat[i][j] = -(dst<<16) - dst*dst;
-                    mat[i][j] = -dst;
+                    mat[i][j] = -(dst<<16) - dst*dst;
+                    //mat[i][j] = -dst;
                 }
             }
             kuhn_munkras(wk.size(), sn.size(), mat, match1, match2);
@@ -284,8 +290,8 @@ cout << "wk: ";
             for(int i = 0; i < sn.size(); ++i) {
                 for(int j = 0; j < wk.size(); ++j) {
                     int dst = dist(wk[i], sn[j]);
-                    //mat[i][j] = -(dst<<16) - dst*dst;
-                    mat[i][j] = -dst;
+                    mat[i][j] = -(dst<<16) - dst*dst;
+                    //mat[i][j] = -dst;
                 }
             }
             kuhn_munkras(sn.size(), wk.size(), mat, match2, match1);
@@ -301,8 +307,7 @@ cout << "wk: ";
                 q.push_back(i);
             }
         }
-        
-        
+//cout << "QQ: " << q.size() << endl;
         
         int skip = 0;
         while(skip < q.size()) {
@@ -325,7 +330,6 @@ cout << "wk: ";
             }
         }
         
-        
         tidy_snow();
 
 
@@ -338,6 +342,10 @@ cout << "wk: ";
             }
         }
         
+        for(int i = 0; i < wk.size(); ++i) {
+            sweep(wk[i].x, wk[i].y);
+        }
+        
         tidy_snow();
         
         return ans;
@@ -348,18 +356,24 @@ int main() {
     
     SnowCleaning sc;
     
+    ofstream fout("case.txt");
+    
     int n, s, c;
     cin >> n >> s >> c;
+    fout << n << ' ' << s << ' ' << c;
     
     sc.init(n, s, c);
     
     for(int i = 2000; i--;) {
         int cnt;
         cin >> cnt;
+        fout << cnt << endl;
         vector<int> v(cnt*2);
         for(int j = 0; j < cnt*2; j++) {
             cin >> v[j];
+            fout << v[j] << ' ';
         }
+        fout << endl;
         vector<string> ans = sc.nextDay(v);
         cout << ans.size() << endl;
         for(int j = 0; j < ans.size(); ++j) {
