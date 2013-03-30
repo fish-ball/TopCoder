@@ -146,6 +146,9 @@ int match2[2500];
     int s[50][50];
     vector<Pos> sn;
     
+    // worker processing queue
+    deque<int> q;
+    
     // result pool
     vector<string> ans;
     
@@ -169,32 +172,22 @@ int match2[2500];
             // log the operation
             sprintf(sbuf, "H %d %d", x, y);
             ans.push_back(sbuf);
-            sweep(x, y);
             return true;
         }
         return false;
     }
     
-    // sweep a snow.
-    bool sweep(int x, int y) {
+    // clean a snow.
+    bool clean(int x, int y) {
         if(s[x][y] != -1) {
-            sn[s[x][y]] = Pos(-1, -1);
+            int i = s[x][y];
+            swap(s[x][y], s[sn.back().x][sn.back().y]);
+            swap(sn[i], sn.back());
             s[x][y] = -1;
+            sn.pop_back();
             return true;
         }
         return false;
-    }
-
-    // tidy the snow structure, remove the swap cell.
-    void tidy_snow() {
-        int m = 0;
-        for(int i = 0; i < sn.size(); ++i) {
-            if(sn[i].x > -1) {
-                s[sn[i].x][sn[i].y] = m;
-                sn[m++] = sn[i];
-            }
-        }
-        sn.resize(m);
     }
     
     // let worker k move towards direction d.
@@ -205,8 +198,6 @@ int match2[2500];
             wk[k] = p;
             w[p.x][p.y] = k;
             w[p0.x][p0.y] = -1;
-            // after move, sweep the snow immediately
-            sweep(p.x, p.y);
             // log the operation
             sprintf(sbuf, "M %d %c", k, dc[d]);
             ans.push_back(sbuf);
@@ -224,7 +215,7 @@ public:
         sna = 0;
         sa = salary;
         co = snowFine;
-        mw = 2;
+        mw = n / 4;
         memset(w, -1, sizeof(w));
         wk.clear();
         memset(s, -1, sizeof(s));
@@ -247,7 +238,7 @@ public:
         
         if(sna > 0) {
             mw = max(mw, sna * co / ((t - sun) * sa));
-            mw = min(mw, 40);
+            mw = min(mw, 100);
         }
 
         // snow falls.
@@ -280,8 +271,10 @@ cout << "wk: ";
             for(int i = 0; i < wk.size(); ++i) {
                 for(int j = 0; j < sn.size(); ++j) {
                     int dst = dist(wk[i], sn[j]);
-                    mat[i][j] = -(dst<<16) - dst*dst;
-                    //mat[i][j] = -dst;
+                    //mat[i][j] = - dst*dst;
+                    mat[i][j] = -(dst<<16)+abs(sn[j].x*2-n)+abs(sn[j].y*2-n);
+                    
+                    //mat[i][j] = - dst;
                 }
             }
             kuhn_munkras(wk.size(), sn.size(), mat, match1, match2);
@@ -289,9 +282,10 @@ cout << "wk: ";
         else {
             for(int i = 0; i < sn.size(); ++i) {
                 for(int j = 0; j < wk.size(); ++j) {
-                    int dst = dist(wk[i], sn[j]);
-                    mat[i][j] = -(dst<<16) - dst*dst;
-                    //mat[i][j] = -dst;
+                    int dst = dist(wk[j], sn[i]);
+                    //mat[i][j] = - dst*dst;
+                    mat[i][j] = -(dst<<16)+abs(sn[i].x*2-n)+abs(sn[i].y*2-n);
+                    //mat[i][j] = - dst;
                 }
             }
             kuhn_munkras(sn.size(), wk.size(), mat, match2, match1);
@@ -300,8 +294,8 @@ cout << "wk: ";
 //cout << "match1: "; for(int i = 0; i < wk.size(); ++i) cout << match1[i] << ' '; cout << endl;
 //cout << "match2: "; for(int j = 0; j < sn.size(); ++j) cout << match2[j] << ' '; cout << endl;
         
-        
-        deque<int> q(0);
+        // move assigned workers.
+        q.clear();
         for(int i = 0; i < wk.size(); ++i) {
             if(match1[i] > -1) {
                 q.push_back(i);
@@ -329,9 +323,47 @@ cout << "wk: ";
                 ++skip;
             }
         }
-        
-        tidy_snow();
-
+        //*
+        // move unassigned workers.
+        q.clear();
+        for(int i = 0; i < wk.size(); ++i) {
+            if(match1[i] == -1) {
+                q.push_back(i);
+            }
+        }
+        skip = 0;
+        while(skip < q.size()) {
+            int k = q.front();
+            q.pop_front();
+            Pos p = wk[k];
+            int mov_d = -1;
+            int nearest = 0;
+            for(int d = 0; d < 4; ++d) {
+                p.x += dx[d];
+                p.y += dy[d];
+                if(p.inside(n) && w[p.x][p.y] == -1) {
+                    int radius = 9999;
+                    for(int i = 0; i < wk.size(); ++i) {
+                        if(i == k) continue;
+                        else radius = min(radius, dist(p, wk[i]));
+                    }
+                    if(radius > nearest) {
+                        mov_d = d;
+                        nearest = radius;
+                    }
+                }
+                p.x -= dx[d];
+                p.y -= dy[d];
+            }
+            if(mov_d > -1 && walk(k, mov_d)) {
+                skip = 0;
+            }
+            else {
+                q.push_back(k);
+                ++skip; 
+            }
+        }
+//*/
 
         // hire workers.
         for(int i = 0, x, y; i < sn.size() && mw > wk.size(); ++i) {
@@ -342,11 +374,11 @@ cout << "wk: ";
             }
         }
         
-        for(int i = 0; i < wk.size(); ++i) {
-            sweep(wk[i].x, wk[i].y);
-        }
         
-        tidy_snow();
+        // clean after all moves.
+        for(int i = 0; i < wk.size(); ++i) {
+            clean(wk[i].x, wk[i].y);
+        }
         
         return ans;
     }
