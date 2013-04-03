@@ -41,7 +41,7 @@ STRATEGY:
 //一定注意m<=n,否则循环无法终止
 //最小权匹配可将权值取相反数
 #include <string.h>
-#define MAXN 2600
+#define MAXN 2500
 #define inf 1000000000
 #define _clr(x) memset(x,0xff,sizeof(int)*n)
 
@@ -98,9 +98,9 @@ char sbuf[20];
 class SnowCleaning {
     
     
-int mat[100][MAXN];
+int mat[100][2500];
 int match1[100];
-int match2[MAXN];
+int match2[2500];
 
 
     
@@ -110,13 +110,13 @@ int match2[MAXN];
     int t;
     int sun;
     // total snow fall accumulated
-    double sna;
+    int sna;
     // max worker estimation
     int mw;
     // salary
-    double sa;
+    int sa;
     // snowFine cost
-    double co;
+    int co;
     
     
     struct Pos {
@@ -215,11 +215,12 @@ public:
         sna = 0;
         sa = salary;
         co = snowFine;
-        mw = int(n*sqrt(6.0*co/sa)/4.0);
+        mw = 2;
         memset(w, -1, sizeof(w));
         wk.clear();
         memset(s, -1, sizeof(s));
         sn.clear();
+        
         return 0;
     }
     vector<string> nextDay(vector<int> snowFalls) {
@@ -235,23 +236,10 @@ public:
         t += 1;
         sun += k2 == 0 ? 1 : 0;
         
-        /*
         if(sna > 0) {
             mw = max(mw, sna * co / ((t - sun) * sa));
             mw = min(mw, 40);
         }
-        */
-//*/        if(mw < int(ceil(sqrt(double(sna) / t * double(co) / double(sa)) * n / 4.0))) ++mw;
-mw = int(sqrt(sna * (0.5 + 0.5 * t / 2000.0) / t * co / sa) * n / 4.0);
-/*/
-        int xmw = int(sqrt(sna * (0.5 + 0.5 * t / 2000.0) / t * co / sa) * n / 4.0);
-        if(mw < xmw) {
-            mw += (xmw-mw) / 2;
-        }
-        mw = min(mw, xmw);
-//*/
-        //mw=20;
-        mw = min(mw, 100);
 
         // snow falls.
         for(int i = 0; i < k2; i += 2) {
@@ -279,28 +267,29 @@ cout << "wk: ";
 //*/
         // assignment
         memset(mat, 0, sizeof(mat));
-        int bound = n / 2;
-        for(int i = 0; i < wk.size(); ++i) {
-            for(int j = 0; j < sn.size(); ++j) {
-                int dst = dist(wk[i], sn[j]);
-                //mat[i][j] = - dst*dst;
-                mat[i][j] = -(dst<<16)+abs(sn[j].x*2-n)+abs(sn[j].y*2-n);
-                
-                //mat[i][j] = - dst;
+        if(wk.size() <= sn.size()) {
+            for(int i = 0; i < wk.size(); ++i) {
+                for(int j = 0; j < sn.size(); ++j) {
+                    int dst = dist(wk[i], sn[j]);
+                    //mat[i][j] = - dst*dst;
+                    mat[i][j] = -(dst<<16)+abs(sn[j].x*2-n)+abs(sn[j].y*2-n);
+                    
+                    //mat[i][j] = - dst;
+                }
             }
-            for(int j = sn.size(); j < sn.size() + wk.size(); ++j) {
-                mat[i][j] = -(bound<<16);
-            }
+            kuhn_munkras(wk.size(), sn.size(), mat, match1, match2);
         }
-        kuhn_munkras(wk.size(), sn.size()+wk.size(), mat, match1, match2);
-        
-        for(int i = 0; i < wk.size(); ++i) {
-            if(match1[i] > sn.size()) {
-                match2[match1[i]] = -1;
-                match1[i] = -1;
+        else {
+            for(int i = 0; i < sn.size(); ++i) {
+                for(int j = 0; j < wk.size(); ++j) {
+                    int dst = dist(wk[j], sn[i]);
+                    //mat[i][j] = - dst*dst;
+                    mat[i][j] = -(dst<<16)+abs(sn[i].x*2-n)+abs(sn[i].y*2-n);
+                    //mat[i][j] = - dst;
+                }
             }
+            kuhn_munkras(sn.size(), wk.size(), mat, match2, match1);
         }
-        
         
 //cout << "match1: "; for(int i = 0; i < wk.size(); ++i) cout << match1[i] << ' '; cout << endl;
 //cout << "match2: "; for(int j = 0; j < sn.size(); ++j) cout << match2[j] << ' '; cout << endl;
@@ -394,8 +383,6 @@ cout << "wk: ";
         return ans;
     }
 };
-
-
 
 int main() {
     
