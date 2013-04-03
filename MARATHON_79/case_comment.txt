@@ -3,3 +3,5 @@
 25	sz=41	sn=66	sa=69	雪很大
 26				人工超贵，雪一般多
 29				格子很大，人工超便宜
+
+seed	mw	n	co	sa	sun	sna	blk	score
