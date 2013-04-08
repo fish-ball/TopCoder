@@ -125,7 +125,7 @@ int dist(Pos a, Pos b) {
 
 // Executive class
 class SnowCleaning {
-public:
+    
     UFS<2500> ufs;
     
     // matching temp.
@@ -185,7 +185,7 @@ public:
     
     // hire a worker.
     bool hire(int x, int y) {
-        //cerr << "hire: (" << x << ", " << y << ")" << endl;
+        cerr << "hire: (" << x << ", " << y << ")" << endl;
         if(w[x][y] == -1) {
             w[x][y] = wk.size();
             wk.push_back(Pos(x, y));
@@ -283,6 +283,7 @@ public:
         sna = 0;
         sa = salary;
         co = snowFine;
+        mw = int(n*sqrt(6.0*co/sa)/4.0);
         memset(w, -1, sizeof(w));
         wk.clear();
         memset(s, -1, sizeof(s));
@@ -304,15 +305,15 @@ public:
         t += 1;
         sun += k2 == 0 ? 1 : 0;
         
-        /************** statistic workers ****************/
-        mw = int(round(sqrt(sna * (0.55 + 0.4 * min(t,500) / 500.0) / t * co / sa) * n / 4.0));
-        //mw = max(mw, int(n*sqrt(6.0*co/sa)/4.0));
+        mw = int(sqrt(sna * (0.55 + 0.4 * min(t,1000) / 1000.0) / t * co / sa) * n / 4.0);
         mw = min(mw, 100);
+        //if(mw < 10) mw -= 1;
 
         // snow falls.
         for(int i = 0; i < k2; i += 2) {
             fall(snowFalls[i], snowFalls[i+1]);
         }
+        
         
         // grouping blocks.
         ufs.make_set(sn.size());
@@ -332,8 +333,7 @@ public:
         // first assignment
         
         memset(mat, 0, sizeof(mat));
-        /************ statistic radius!!! ************/
-        int range = int(0.8 * n / sqrt(1.0*mw) + 7.5);
+        int range = int(1.25 * n / sqrt(1.0*mw) + 7.5);
         for(int i = 0; i < wk.size(); ++i) {
             for(int j = 0; j < sn.size(); ++j) {
                 int dst = dist(wk[i], sn[j]);
@@ -346,7 +346,7 @@ public:
                 mat[i][j] = -(range<<16);
             }
         }
-
+//        fout << t << ": " << range << endl;
         kuhn_munkras(wk.size(), sn.size()+wk.size(), mat, match1, match2);
         
         // remve the unmatch indeed.
@@ -363,7 +363,7 @@ public:
         // generate block size.
         for(int i = 0; i < sn.size(); ++i) {
             int j = ufs.find_set(i);
-            bsz[j] = ufs.get_size(j) * 4;
+            bsz[j] = ufs.get_size(j) * 2;
         }
         
         // sort matched workers by priority.
@@ -391,7 +391,7 @@ public:
         }
         
         for(int i = 0; i < rem_wk.size(); ++i) {
-     //       match1[rem_wk[i]] = -1;
+//            match1[rem_wk[i]] = -1;
         }
         
         // move assigned workers.
@@ -443,18 +443,12 @@ public:
             }
         }
         /////////////////////////////////
-        
-        vector<pair<int, int> > vd(0);
-        for(map<int, Pos>::iterator it = target.begin(); it != target.end(); ++it) {
-            vd.push_back(make_pair(dist(wk[it->first], it->second), it->first));
-        }
-        sort(vd.begin(), vd.end());
-        
         skip = 0;
         q.clear();
-        for(int i = 0; i < vd.size(); ++i) {
-            q.push_back(vd[i].second);
+        for(map<int, Pos>::iterator it = target.begin(); it != target.end(); ++it) {
+            q.push_back(it->first);
         }
+        //random_shuffle(q.begin(), q.end());
         
         while(q.size() && skip <= q.size()) {
             int k = q.front();
@@ -506,46 +500,10 @@ public:
             clean(wk[i].x, wk[i].y);
         }
 
-        //mw = min(mw, max(4, int(wk.size() + 5)));
+        // hire workers.
+        bool isAnyoneHired = false;
         
-        // if new worker is hired, regenerate the sentinels.
-        if(wk.size() < mw && sn.size() > 0) {
-            int m1 = 0, m2 = 0;
-            
-            while(true) {
-                if((m1 * m2 + 1) / 2 >= mw) break;
-                if(m1 >= 7 && mw % ((m1 * m2 + 1) / 2) < m1 / 2
-                        && wk.size() <= ((m1 * m2 + 1) / 2)) {
-                    mw = ((m1 * m2 + 1) / 2);
-                    break;
-                }
-                ++m1;
-                if((m1 * m2 + 1) / 2 >= mw) break;
-                if(m2 >= 7 && mw % ((m1 * m2 + 1) / 2) < m1 / 2
-                        && wk.size() <= ((m1 * m2 + 1) / 2)) {
-                    mw = ((m1 * m2 + 1) / 2);
-                    break;
-                }
-                ++m2;
-            }
-            
-            st.clear();
-            
-            bool odd = mw == (m1 * m2 + 1) / 2;
-            
-            double side1 = double(n) / m1;
-            double side2 = double(n) / m2;
-            
-            for(int i = 0; i < m1; ++i) {
-                for(int j = odd ? 0 : 1; j < m2; j += 2) {
-                    Pos p(int(side1*(i+0.5)), int(side2*(j+0.5)));
-                    if(p.inside(n));
-                    st.push_back(p);
-                }
-                odd = !odd;
-            }
-        }
-        
+        //mw = min(mw, max(4, int(wk.size() + 1 + sn.size() * co / sa / 2)));
         while(wk.size() < mw && sn.size() > 0) {
             cal_disw();
             
@@ -561,17 +519,40 @@ public:
             
             hire(pp.x, pp.y);
             clean(pp.x, pp.y);
+            isAnyoneHired = true;
+        }
+        
+        // if new worker is hired, regenerate the sentinels.
+        if(isAnyoneHired) {
+            int m1 = 0, m2 = 0;
+            
+            while(true) {
+                if((m1 * m2 + 1) / 2 >= wk.size()) break;
+                ++m1;
+                if((m1 * m2 + 1) / 2 >= wk.size()) break;
+                ++m2;
+            }
+            
+            st.clear();
+            
+            bool odd = wk.size() == (m1 * m2 + 1) / 2;
+            
+            double side1 = double(n) / m1;
+            double side2 = double(n) / m2;
+            
+            for(int i = 0; i < m1; ++i) {
+                for(int j = odd ? 0 : 1; j < m2; j += 2) {
+                    Pos p(int(side1*(i+0.5)), int(side2*(j+0.5)));
+                    if(p.inside(n));
+                    st.push_back(p);
+                }
+                odd = !odd;
+            }
         }
         
         
         score += wk.size() * int(sa+.1) + sn.size() * int(co+.1);
-        //*
-        if(t == 2000) {
-ofstream fout("out.txt", ios::app);
-fout << score << endl;
-fout.close();
-        }
-        //*/
+        
         return ans;
     }
 };
@@ -598,7 +579,6 @@ int main() {
             cout << ans[j] << endl;
         }
     }
-    
     
     return 0;
 }
