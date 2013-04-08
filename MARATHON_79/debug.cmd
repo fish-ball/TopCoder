@@ -1,1 +1,1 @@
-java -jar SnowCleaningVis.jar -exec SnowCleaning -delay 0 -seed 7
+java -jar SnowCleaningVis.jar -exec SnowCleaning -delay 0 -seed 1

@@ -1,3 +1,4 @@
+
 template<int SZ> class UFS {
 
     int p[SZ+1], rank[SZ+1], size[SZ+1], sets; 
@@ -305,9 +306,8 @@ public:
         t += 1;
         sun += k2 == 0 ? 1 : 0;
         
-        mw = int(sqrt(sna * (0.55 + 0.45 * min(t,500) / 500.0) / t * co / sa) * n / 4.0);
+        mw = int(round(sqrt(sna * (0.55 + 0.45 * min(t,500) / 500.0) / t * co / sa) * n / 4.0));
         mw = min(mw, 100);
-        //if(mw < 10) mw -= 1;
 
         // snow falls.
         for(int i = 0; i < k2; i += 2) {
@@ -443,12 +443,18 @@ public:
             }
         }
         /////////////////////////////////
+        
+        vector<pair<int, int> > vd(0);
+        for(map<int, Pos>::iterator it = target.begin(); it != target.end(); ++it) {
+            vd.push_back(make_pair(dist(wk[it->first], it->second), it->first));
+        }
+        sort(vd.begin(), vd.end());
+        
         skip = 0;
         q.clear();
-        for(map<int, Pos>::iterator it = target.begin(); it != target.end(); ++it) {
-            q.push_back(it->first);
+        for(int i = 0; i < vd.size(); ++i) {
+            q.push_back(vd[i].second);
         }
-        //random_shuffle(q.begin(), q.end());
         
         while(q.size() && skip <= q.size()) {
             int k = q.front();
@@ -500,10 +506,44 @@ public:
             clean(wk[i].x, wk[i].y);
         }
 
-        // hire workers.
-        bool isAnyoneHired = false;
+        //mw = min(mw, max(4, int(wk.size() + 5)));
         
-        //mw = min(mw, max(4, int(wk.size() + 1 + sn.size() * co / sa / 2)));
+        // if new worker is hired, regenerate the sentinels.
+        if(wk.size() < mw && sn.size() > 0) {
+            int m1 = 0, m2 = 0;
+            
+            while(true) {
+                if((m1 * m2 + 1) / 2 >= mw) break;
+                if(m1 >= 7 && mw % ((m1 * m2 + 1) / 2) < m1 / 2) {
+                    mw = ((m1 * m2 + 1) / 2);
+                    break;
+                }
+                ++m1;
+                if((m1 * m2 + 1) / 2 >= mw) break;
+                if(m2 >= 7 && mw % ((m1 * m2 + 1) / 2) < m1 / 2) {
+                    mw = ((m1 * m2 + 1) / 2);
+                    break;
+                }
+                ++m2;
+            }
+            
+            st.clear();
+            
+            bool odd = mw == (m1 * m2 + 1) / 2;
+            
+            double side1 = double(n) / m1;
+            double side2 = double(n) / m2;
+            
+            for(int i = 0; i < m1; ++i) {
+                for(int j = odd ? 0 : 1; j < m2; j += 2) {
+                    Pos p(int(side1*(i+0.5)), int(side2*(j+0.5)));
+                    if(p.inside(n));
+                    st.push_back(p);
+                }
+                odd = !odd;
+            }
+        }
+        
         while(wk.size() < mw && sn.size() > 0) {
             cal_disw();
             
@@ -519,35 +559,6 @@ public:
             
             hire(pp.x, pp.y);
             clean(pp.x, pp.y);
-            isAnyoneHired = true;
-        }
-        
-        // if new worker is hired, regenerate the sentinels.
-        if(isAnyoneHired) {
-            int m1 = 0, m2 = 0;
-            
-            while(true) {
-                if((m1 * m2 + 1) / 2 >= wk.size()) break;
-                ++m1;
-                if((m1 * m2 + 1) / 2 >= wk.size()) break;
-                ++m2;
-            }
-            
-            st.clear();
-            
-            bool odd = wk.size() == (m1 * m2 + 1) / 2;
-            
-            double side1 = double(n) / m1;
-            double side2 = double(n) / m2;
-            
-            for(int i = 0; i < m1; ++i) {
-                for(int j = odd ? 0 : 1; j < m2; j += 2) {
-                    Pos p(int(side1*(i+0.5)), int(side2*(j+0.5)));
-                    if(p.inside(n));
-                    st.push_back(p);
-                }
-                odd = !odd;
-            }
         }
         
         
@@ -556,6 +567,8 @@ public:
         return ans;
     }
 };
+
+
 
 int main() {
     srand(time(0));
