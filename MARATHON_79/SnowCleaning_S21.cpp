@@ -333,6 +333,39 @@ public:
             }
         }
         
+        cal_diss();
+        
+        /////////////////////////
+        // first assignment
+        
+        memset(mat, 0, sizeof(mat));
+        /************ statistic radius!!! ************/
+        int range;
+        range = int(0.8 * n / sqrt(1.0*mw) + 8);
+        //range = n+n;
+        // must reach.
+        //if(!st.empty()) (st[0].x+st[0].y)*2;
+        for(int i = 0; i < wk.size(); ++i) {
+            for(int j = 0; j < sn.size(); ++j) {
+                int dst = dist(wk[i], sn[j]);
+                // matching function.
+                mat[i][j] = -(dst<<16)+abs(sn[j].x*2-n)+abs(sn[j].y*2-n);
+                //mat[i][j] = -(dst<<16)+sn[j].x*256+sn[j].y;
+            }
+            // outside matching, to let the unassign workers to place.
+            for(int j = sn.size(); j < sn.size() + wk.size(); ++j) {
+                mat[i][j] = -(range<<16);
+            }
+        }
+
+        kuhn_munkras(wk.size(), sn.size()+wk.size(), mat, match1, match2);
+        
+        // remve the unmatch indeed.
+        for(int i = 0; i < wk.size(); ++i) {
+            if(match1[i] >= sn.size()) 
+                match1[i] = -1;
+        }
+        
         // cluster..
         int bsz[2500] = {}; // currently block size remained.
         int lat[2500] = {}; // currently last worker time cost.
@@ -341,51 +374,41 @@ public:
         // generate block size.
         for(int i = 0; i < sn.size(); ++i) {
             int j = ufs.find_set(i);
-            bsz[j] = (ufs.get_size(j) + 7) / 8;
+            bsz[j] = ufs.get_size(j) * 4;
         }
         
-        /////////////////////////
-        // first assignment
-        
-        /************ statistic radius!!! ************/
-        int range;
-        range = int(0.8 * n / sqrt(1.0*mw) + 8);
-        
-        memset(diss, -1, sizeof(diss));
-        
-        deque<Pos> sq(0);
-        deque<int> rq(0);
-        for(int i = 0; i < sn.size(); ++i) {
-            diss[sn[i].x][sn[i].y] = 0;
-            sq.push_back(sn[i]);
-            rq.push_back(ufs.find_set(i));
+        // sort matched workers by priority.
+        vector<pair<int, int> > pr(0);
+        for(int i = 0; i < wk.size(); ++i) {
+            if(match1[i] > -1)
+                pr.push_back(make_pair(dist(wk[i], sn[match1[i]]), i));
         }
+        sort(pr.begin(), pr.end());
         
-        while(!sq.empty()) {
-            Pos p = sq.front();
-            int root = rq.front();
-            int now = diss[p.x][p.y];
-            sq.pop_front();
-            rq.pop_front();
-            if(bsz[root] < 0) {
-                continue;
+        // workers to be dis assigned.
+        vector<int> rem_wk(0);
+        
+        // distance calculation.
+        for(int i = 0; i < pr.size(); ++i) {
+            int wi = pr[i].second;
+            int tt = pr[i].first;
+            int bi = ufs.find_set(match1[wi]);
+            bsz[bi] -= wsz[bi] * (tt-lat[bi]);
+            lat[bi] = tt;
+            ++wsz[bi];
+            if(bsz[bi] < 0) {
+                rem_wk.push_back(wi);
             }
-            for(int d = 0; d < 4; ++d) {
-                Pos p1(p.x+dx[d], p.y+dy[d]);
-                if(p1.inside(n) && diss[p1.x][p1.y] == -1) {
-                    // catched
-                    if(w[p1.x][p1.y] > -1 && target.find(w[p1.x][p1.y]) == target.end()) {
-                        target[w[p1.x][p1.y]] = p;
-                        --bsz[root];
-                    }
-                    else {
-                        diss[p1.x][p1.y] = now + 1;
-                        if(diss[p1.x][p1.y] <= range) {
-                            sq.push_back(p1);
-                            rq.push_back(root);
-                        }
-                    }
-                }
+        }
+        
+        for(int i = 0; i < rem_wk.size(); ++i) {
+     //       match1[rem_wk[i]] = -1;
+        }
+        
+        // move assigned workers.
+        for(int i = 0; i < wk.size(); ++i) {
+            if(match1[i] > -1) {
+                target[i] = sn[match1[i]];
             }
         }
         
