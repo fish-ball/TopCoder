@@ -1,4 +1,4 @@
-#define DEBUG 1
+#define DEBUG 0
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -522,6 +522,50 @@ int hue(int r, int g, int b) {
 #endif //BMP_XPER
 
 
+
+char sbuf[20];
+
+string st[] = {
+    "DOWN", "DOWN", "OFF", "CENTER", "OFF",
+    "OFF", "OFF", "OFF", "OFF", "OFF",
+    "OFF", "OFF", "OFF", "OFF", "OFF",
+    "DOWN", "OFF", "CENTER", "OFF", "OFF",
+    "UP", "ON"
+};
+
+double PS[22][2] = {
+    {	0.659798903	,	0.156708861	},
+    {	0.659798903	,	0.156708861	},
+    {	0.756691042	,	0.156708861	},
+    {	0.757351852	,	0.478202532	},
+    {	0.759648799	,	0.398455696	},
+    {	0.758719852	,	0.561746835	},
+    {	0.182920518	,	0.396200762	},
+    {	0.304879852	,	0.39652725	},
+    {	0.4287061	,	0.395196451	},
+    {	0.185185185	,	0.480088945	},
+    {	0.307333333	,	0.481444867	},
+    {	0.429537037	,	0.480114068	},
+    {	0.185528757	,	0.563977128	},
+    {	0.305955473	,	0.563865653	},
+    {	0.426716141	,	0.563776933	},
+    {	0.20287594	,	0.787944162	},
+    {	0.205861423	,	0.706763959	},
+    {	0.497969925	,	0.787113924	},
+    {	0.497977528	,	0.707367089	},
+    {	0.496254682	,	0.862025316	},
+    {	0.790093633	,	0.788341772	},
+    {	0.790093633	,	0.706075949	}
+};
+
+int X1[22], Y1[22], X2[22], Y2[22];
+string S[22];
+
+vector<Point> vv;
+
+double diff;
+string folder = "";
+
 /* Image class
 Axis direction (W X H):
    01234567 W
@@ -534,9 +578,6 @@ Axis direction (W X H):
 H
 
 */
-
-double diff;
-string folder = "";
 
 
 #include <deque>
@@ -589,20 +630,6 @@ public:
             }
         }
     }
-    
-    Image(const Image& img) {
-        W = img.W;
-        H = img.H;
-        
-        _R = new BYTE[W*H];
-        memcpy(_R, img._R, W*H); 
-        if(img._R != img._G) {
-            _G = new BYTE[W*H];
-            memcpy(_G, img._G, W*H); 
-            _B = new BYTE[W*H];
-            memcpy(_B, img._B, W*H); 
-        }
-    }
 
     ~Image() {
         if(_G != _R) delete [] _G;
@@ -613,47 +640,6 @@ public:
 	// 判断一个点坐标是否在图像范围内
     bool inside(int x, int y) { return x>=0 && x<W && y>=0 && y<H; }
     bool inside(const Point &p) { return p.x>=0 && p.x<W && p.y>=0 && p.y<H; }
-    
-    void shrink() {
-        int i, j;
-        int W2 = W/2, H2 = H/2;
-        BYTE* rr = new BYTE[W2*H2], *gg, *bb;
-        if(_R != _G) {
-            gg = new BYTE[W2*H2];
-            bb = new BYTE[W2*H2];
-        }
-        for(i = 0; i < W2; ++i) {
-            for(j = 0; j < H2; ++j) {
-                rr[i+j*W2] = (0 + 
-                    r((i<<1),(j<<1)) +
-                    r((i<<1)+1,(j<<1)) +
-                    r((i<<1),(j<<1)+1) +
-                    r((i<<1)+1,(j<<1)+1)) >> 2;
-                if(_R!=_G) {
-                    gg[i+j*W2] = (0 + 
-                        g((i<<1),(j<<1)) +
-                        g((i<<1)+1,(j<<1)) +
-                        g((i<<1),(j<<1)+1) +
-                        g((i<<1)+1,(j<<1)+1)) >> 2;
-                    bb[i+j*W2] = (0 + 
-                        b((i<<1),(j<<1)) +
-                        b((i<<1)+1,(j<<1)) +
-                        b((i<<1),(j<<1)+1) +
-                        b((i<<1)+1,(j<<1)+1)) >> 2;
-                }
-            }
-        }
-        W /= 2;
-        H /= 2;
-        if(_R != _G) {
-            delete [] _G;
-            delete [] _B;
-        }
-        delete [] _R;
-        _R = rr;
-        _G = gg;
-        _B = bb;
-    }
     
 	// 输出图像到文件
     void draw(string fname = "image.bmp") {
@@ -693,6 +679,48 @@ public:
         }
         
         fclose(fp_bitmap);
+    }
+
+
+    void shrink() {
+        int i, j;
+        int W2 = W/2, H2 = H/2;
+        BYTE* rr = new BYTE[W2*H2], *gg, *bb;
+        if(_R != _G) {
+            gg = new BYTE[W2*H2];
+            bb = new BYTE[W2*H2];
+        }
+        for(i = 0; i < W2; ++i) {
+            for(j = 0; j < H2; ++j) {
+                rr[i+j*W2] = (0 + 
+                    r((i<<1),(j<<1)) +
+                    r((i<<1)+1,(j<<1)) +
+                    r((i<<1),(j<<1)+1) +
+                    r((i<<1)+1,(j<<1)+1)) >> 2;
+                if(_R!=_G) {
+                    gg[i+j*W2] = (0 + 
+                        g((i<<1),(j<<1)) +
+                        g((i<<1)+1,(j<<1)) +
+                        g((i<<1),(j<<1)+1) +
+                        g((i<<1)+1,(j<<1)+1)) >> 2;
+                    bb[i+j*W2] = (0 + 
+                        b((i<<1),(j<<1)) +
+                        b((i<<1)+1,(j<<1)) +
+                        b((i<<1),(j<<1)+1) +
+                        b((i<<1)+1,(j<<1)+1)) >> 2;
+                }
+            }
+        }
+        W /= 2;
+        H /= 2;
+        if(_R != _G) {
+            delete [] _G;
+            delete [] _B;
+        }
+        delete [] _R;
+        _R = rr;
+        _G = gg;
+        _B = bb;
     }
 
 	// 输出高斯滤波后的图片
@@ -738,6 +766,7 @@ public:
         }
     }
     
+    
     // 输出灰度化的图像 
     Image getGray() {
         
@@ -766,8 +795,22 @@ public:
         if(x2 < x1) x2 = W;
         if(y2 < y1) y2 = H;
         int tolerance;
-        if(folder == "Sim") tolerance = H / 200;
-        else tolerance = H / 100;    
+        
+        if(folder == "Sim") {
+            tolerance = H / 200;
+        }
+        else if(folder == "Lab") {
+            tolerance = H / 200;
+        }
+        else if(folder == "Lab2") {
+            tolerance = H / 100;
+        }
+        else if(folder == "ISS") {
+            tolerance = H / 200;
+        }
+        else {
+            tolerance = H / 200;
+        }
         
         Segment ret;
         
@@ -782,7 +825,9 @@ public:
                         inside(x,y+1) && r(x,y+1) == 255 ||
                         inside(x,y-1) && r(x,y-1) == 255 ||
                         inside(x,y+2) && r(x,y+2) == 255 ||
-                        inside(x,y-2) && r(x,y-2) == 255) {
+                        inside(x,y-2) && r(x,y-2) == 255 ||
+                        inside(x,y+3) && r(x,y+3) == 255 ||
+                        inside(x,y-3) && r(x,y-3) == 255) {
                     tx = max(tx, x);
                     // 仅当断口超过容差并且超过当前最长段的 1/8 时才打断线段 
                     if(tx - px > tolerance && (tx-px)*8 > mxlen ) sx = tx;
@@ -807,7 +852,9 @@ public:
                         inside(x+1,y) && r(x+1,y) == 255 ||
                         inside(x-1,y) && r(x-1,y) == 255 ||
                         inside(x+2,y) && r(x+2,y) == 255 ||
-                        inside(x-2,y) && r(x-2,y) == 255) {
+                        inside(x-2,y) && r(x-2,y) == 255 ||
+                        inside(x+3,y) && r(x+3,y) == 255 ||
+                        inside(x-3,y) && r(x-3,y) == 255) {
                     ty = max(ty, y);
                     if(ty - py > tolerance && (ty-py)*8 > mxlen ) sy = ty;
                     py = ty;
@@ -1009,6 +1056,11 @@ public:
         int dThrHigh;  
         int dThrLow;  
         double  dRatLow = 0.5;
+        
+        if(folder == "Lab2") {
+            dRatHigh = 0.7;
+        }
+        
         nHighCount = (int)(dRatHigh * nEdgeNum + 0.5);  
 
         nEdgeNum = nHist[j=1];
@@ -1194,6 +1246,9 @@ public:
         int rng = W/80;
         for(i=rng; i<W-rng; ++i) {
             for(j=rng; j<H-rng; ++j) {
+                
+                if(j > H*2/3) break;
+                
                 tmp = acc[(i+rng)+(j+rng)*W]
                     - acc[(i+rng)+(j-rng)*W]
                     - acc[(i-rng)+(j+rng)*W]
@@ -1222,6 +1277,30 @@ public:
         vector<Segment> ret(0);
         
         int i, j, k, rr, cc, mx, cnt, acc;
+        
+        // 参数设置 
+        int hcnt, rng;
+        
+        if(folder == "Sim") {
+            hcnt = 10;
+            rng = 10;
+        }
+        else if(folder == "Lab") {
+            hcnt = 10;
+            rng = 10;
+        }
+        else if(folder == "Lab2") {
+            hcnt = 10;
+            rng = 20;
+        }
+        else if(folder == "ISS") {
+            hcnt = 10;
+            rng = 10;
+        }
+        else {
+            hcnt = 10;
+            rng = 10;
+        }
         
         // 角度的精度倍数 
         const int A = 4, C = 360*A; 
@@ -1267,9 +1346,10 @@ public:
             }
         }
         
+        Image hf(C, R, true);
+        
         if(DEBUG) {
             
-            Image hf(C, R, true);
             cerr << "hough complete!!" << endl;
             
             for(cc = mx = 0; cc < C; ++cc) {
@@ -1282,30 +1362,29 @@ public:
                     hf.r(cc, rr) = _H[cc*R+rr] * 0xFF / mx;
                 }
             }
-            hf.draw(d?"hf_hor.bmp":"hf_ver.bmp");
-
-            cerr << "hough printed!!" << endl;
         }
-        /*
-        // 对霍夫阵进行差分运算
-        for(i = 0; i < C; ++i) {
-            if(!b[i]) continue;
-            for(j = 0; j < R; ++j) {
-                if(j==R-1||i==C-1||!b[i+1]) {
-                    _H[i*R+j] = 0;
-                }
-                else {
-                    _H[i*R+j] = abs(_H[i*R+j]*2 - _H[i*R+j+1] - _H[(i+1)*R+j]);
-                }
+        
+        if(folder == "Lab2") {
+            // 对霍夫阵进行差分运算
+            for(i = 0; i < C; ++i) {
+                if(!b[i]) continue;
+                for(j = 0; j < R; ++j) {
+                    if(j==R-1||i==C-1||!b[i+1]) {
+                        _H[i*R+j] = 0;
+                    }
+                    else {
+                        _H[i*R+j] = abs(_H[i*R+j]*2 - _H[i*R+j+1] - _H[(i+1)*R+j]);
+                    }
+                } 
             } 
-        } 
-        */
+        }
+        
         // 查找霍夫点
         int idx, val;
         
         vector<Segment> raw(0);
         
-        while(raw.size() < 10) {
+        while(raw.size() < hcnt) {
             mx = 0;
             int mc = -1, mr = -1;
             for(k = 0; k < vn; ++k) {
@@ -1320,22 +1399,12 @@ public:
                 }
             }
             Line l(_cos[mc], _sin[mc], -mr);
-            Line w0(1,0,W/2), h0(0,1,H/2);
-            for(i = 0; i < raw.size(); ++i) {
-                if(
-                    min(
-                        dist(intersect(w0, l), intersect(w0, Line(raw[i]))),
-                        dist(intersect(h0, l), intersect(h0, Line(raw[i])))
-                    ) < H/50
-                ) break;
-            }
-            if(i == raw.size()) {
-                raw.push_back(getSegment(l,w1,w2,h1,h2));
+            raw.push_back(getSegment(l,w1,w2,h1,h2));
 
-    //img.drawLine(l,0,0,0xFF);
+            if(DEBUG) { 
+                //img.drawLine(l,0,0,0xFF);
+                //img.drawLine(raw.back(),0,0,0xFF);
             }
-    //img.drawLine(raw.back(),0,0,0xFF);       
-            int rng = 10;
             for(i=mc-rng; i<mc+rng; ++i) {
                 if(i<0 || i>=C || !b[i]) continue;
                 for(j=mr-rng; j<mr+rng; ++j) {
@@ -1347,21 +1416,22 @@ public:
         
         if(DEBUG) {
             cerr << "hough detected!!" << endl;
-            /*
+            
             for(cc = 0; cc < C; ++cc) {
                 for(rr = 0; rr < R; ++rr) {
                     hf.g(cc, rr) = hf.b(cc, rr) = _H[cc*R+rr] * 0xFF / mx;
                 }
             }
             
-            */
+            hf.draw(d?"hf_hor.bmp":"hf_ver.bmp");
+
+            cerr << "hough printed!!" << endl;
         }
         
         sort(raw.rbegin(), raw.rend());
         
         if(raw.size() > 0) {
             for(i = 0; i < raw.size(); ++i) {
-//img.drawLine(raw[i], 0xFF, -1, -1);
                 // 筛选长度为最长的 1/6 的线段。
                 // 除非线段靠着边 
                 if(raw[i].length() < raw[0].length() / 6 &&
@@ -1374,10 +1444,11 @@ public:
                     abs(raw[i].b.y - h1) < 2 || 
                     abs(raw[i].b.y - h2) < 2 )
                 ) continue; 
+//img.drawLine(raw[i], 0xFF, -1, -1);
                 ret.push_back(raw[i]);
                 if(DEBUG) {
                     cerr<<raw[i].length()<<endl;
-                    img.drawLine(raw[i], 0xFF, -1, -1);
+                    img.drawLine(raw[i], 0xFF, 0, 0);
                     //cerr << cc << " " << rr << " " << len << endl;
                 }
             }
@@ -1408,21 +1479,42 @@ public:
         }
         
         // stripe bounding, red point to be center, width at most H/2 or W/4.
-        int h1 = max(0, int(red.y) - H/8);
-        int h2 = min(H-1, int(red.y) + H*3/5);
-        int w1 = max(0, int(red.x) - W/3);
-        int w2 = min(W-1, int(red.x) + W/4);
+        int h1, h2, w1, w2;
+        if(folder == "Sim") {
+            h1 = max(0, int(red.y) - H/8);
+            h2 = min(H-1, int(red.y) + H*3/5);
+            w1 = max(0, int(red.x) - W/3);
+            w2 = min(W-1, int(red.x) + W/4);
+        }
+        else if(folder == "Lab") {
+            h1 = max(0, int(red.y) - H/8);
+            h2 = min(H-1, int(red.y) + H*3/8);
+            w1 = max(0, int(red.x) - W/3);
+            w2 = min(W-1, int(red.x) + W/6);
+        }
+        else if(folder == "Lab2") {
+            h1 = max(0, int(red.y) - H/8);
+            h2 = min(H-1, int(red.y) + H*3/8);
+            w1 = max(0, int(red.x) - W/3);
+            w2 = min(W-1, int(red.x) + W/6);
+        }
+        else {
+            h1 = max(0, int(red.y) - H/8);
+            h2 = min(H-1, int(red.y) + H*3/5);
+            w1 = max(0, int(red.x) - W/3);
+            w2 = min(W-1, int(red.x) + W/4);
+        }
         
         if(DEBUG) {
             // render
             for(int i = w1; i < w2; ++i) {
                 for(int j = 0; j < H; ++j) {
-                    b(i,j) = 127;
+                    b(i,j) = 64;
                 }
             }
             for(int i = 0; i < W; ++i) {
                 for(int j = h1; j < h2; ++j) {
-                    r(i,j) = 127;
+                    r(i,j) = 64;
                 }
             }
         }
@@ -1438,28 +1530,34 @@ public:
         // vertival line detection
         vector<Segment> vl = e.getLines(0, W, h1, h2, true, *this, red);
         
-        double t = 3;
-        
-        int lk = -1, rk = -1, uk = -1, dk = -1;
-        
         // get up/down line.
         double maxy = -9999, miny = 9999;
         for(int i = 0; i < hl.size(); ++i) {
             double yy = intersect(Line(hl[i]), Line(1, 0, -red.x)).y;
-//            drawLine(hl[i], 0xFF,0xFF,-1);
+            
+            if(DEBUG) {
+            //drawLine(hl[i], -1,0xFF,-1);
+            //drawLine(Line(1, 0, -red.x+H/4), 255,255,255);
+            }
             if(!cross(hl[i], Line(1, 0, -red.x+H/30))
                 && !cross(hl[i], Line(1, 0, -red.x-H/20))
-                && !cross(hl[i], Line(1, 0, -w2+5))) continue;
+                && !cross(hl[i], Line(1, 0, -w2+5))
+                && !((red.x > W*5/6 || folder=="Lab2") && cross(hl[i], Line(1, 0, -red.x+H/4)))
+                ) continue;
             if(red.x < W/6 && 
                 fabs(hl[i].a.y-hl[i].b.y) > fabs(hl[i].a.x-hl[i].b.x)*0.6) continue;
-drawLine(hl[i], 0xFF,0xFF,0xFF); 
-
+                
+            if(DEBUG) {
+            drawLine(hl[i], -1,-1,0xFF);
+            }
             if(yy < red.y && dist(red, Line(hl[i])) > H/40 && yy > maxy) {
-                lu = hl[uk=i];
+                if(!(folder == "Lab2" && dist(red, Line(hl[i])) < H/17)){ 
+                lu = hl[i];
                 maxy = yy;
+                }
             }
             if(yy > red.y && dist(red, Line(hl[i])) > H/5 && yy < miny) {
-                ld = hl[dk=i];
+                ld = hl[i];
                 miny = yy;
             }
         }
@@ -1476,30 +1574,35 @@ drawLine(hl[i], 0xFF,0xFF,0xFF);
             
             double kk = eq(vl[i].a.x,vl[i].b.x) ?
                     1e9 : (vl[i].a.y-vl[i].b.y)/(vl[i].a.x-vl[i].b.x);
-drawLine(vl[i], 0xFF,0xFF,0xFF);
-            //drawLine(Line(0, 1, -h2+5), 0xFF,0xFF,0xFF);
+            
+            if(folder == "Lab2" && fabs(kk) < 1.2) continue;
+            
+            if(DEBUG) {
+                drawLine(vl[i], -1,-1,0xFF);
+                //drawLine(Line(0, 1, -h2+5), 0xFF,0xFF,0xFF);
+            }
+            
             double xx = intersect(vl[i], Line(0, 1, -red.y)).x;
             if(!(kk<0 && kk>-1.732) && // 左边线不得右倾30度以上 
                     xx < red.x && dist(red, Line(vl[i])) > H/10 &&
                     xx > maxx) {
-                ll = vl[lk=i];
+                ll = vl[i];
                 maxx = xx;
             }
             if(!(kk>0 && kk<1.732) && // 右边线不得左倾30度以上 
                     xx > red.x && dist(red, Line(vl[i])) > H/20 && xx < minx) {
-                if(vl[lk].length() * 2 < vl[i].length() && gt(dist(vl[lk], red), dist(lr, red))) continue;
-                lr = vl[lk=i];
+                lr = vl[i];
                 minx = xx;
             }
         }
         
         if(DEBUG) {
-            
+            //*
             drawLine(lu, -1, 0xFF, -1);
             drawLine(ld, -1, 0xFF, -1);
             drawLine(ll, 0xFF, -1, 0xFF);
             drawLine(lr, 0xFF, -1, 0xFF);
-            
+            //*/
         }
         
         
@@ -1517,6 +1620,15 @@ drawLine(vl[i], 0xFF,0xFF,0xFF);
         
         return ret;
     }
+    
+    void getStatus() {
+        
+        // 估计的面板面积 
+        double s = area(vv[0], vv[1], vv[3])
+                + area(vv[0], vv[2], vv[3]);
+                
+        
+    }
 };
 
 
@@ -1530,55 +1642,14 @@ drawLine(vl[i], 0xFF,0xFF,0xFF);
 using namespace std;
 
 
-char sbuf[20];
-
-string st[] = {
-    "DOWN", "DOWN", "OFF", "CENTER", "OFF",
-    "OFF", "OFF", "OFF", "OFF", "OFF",
-    "OFF", "OFF", "OFF", "OFF", "OFF",
-    "DOWN", "OFF", "CENTER", "OFF", "OFF",
-    "UP", "ON"
-};
-
-double PS[22][2] = {
-    {	0.659798903	,	0.156708861	},
-    {	0.659798903	,	0.156708861	},
-    {	0.756691042	,	0.156708861	},
-    {	0.757351852	,	0.478202532	},
-    {	0.759648799	,	0.398455696	},
-    {	0.758719852	,	0.561746835	},
-    {	0.182920518	,	0.396200762	},
-    {	0.304879852	,	0.39652725	},
-    {	0.4287061	,	0.395196451	},
-    {	0.185185185	,	0.480088945	},
-    {	0.307333333	,	0.481444867	},
-    {	0.429537037	,	0.480114068	},
-    {	0.185528757	,	0.563977128	},
-    {	0.305955473	,	0.563865653	},
-    {	0.426716141	,	0.563776933	},
-    {	0.20287594	,	0.787944162	},
-    {	0.205861423	,	0.706763959	},
-    {	0.497969925	,	0.787113924	},
-    {	0.497977528	,	0.707367089	},
-    {	0.496254682	,	0.862025316	},
-    {	0.790093633	,	0.788341772	},
-    {	0.790093633	,	0.706075949	}
-};
- 
-
 class RobonautEye {
     
     int W;
     int H;
     
-    int X1[22], Y1[22], X2[22], Y2[22];
-    string S[22];
-
-    vector<Point> v;
-    
     Point getPoint(double kx, double ky) {
         
-        Point a = v[0], b = v[1], c = v[2], d = v[3];
+        Point a = vv[0], b = vv[1], c = vv[2], d = vv[3];
         Line lh1(a,b), lh2(c,d), lv1(a,c), lv2(b,d);
         Point oh = intersect(lh1, lh2);
         Point ov = intersect(lv1, lv2);
@@ -1670,12 +1741,18 @@ public:
         else if(diff < 30) folder = "Lab2";
         if(limg[0] == 2448 && limg[1] == 2050) folder = "ISS";
         
+        if(folder == "Lab2") {
+            for(int i = 0; i < 22; ++i) {
+                PS[i][0] = 1.0 - (1.0-PS[i][0])*0.97;
+            }
+        }
+        
         if(DEBUG) {
             cerr << diff << endl;
         }
 //*
         if(folder != "Sim") img1.getFilted();
-        v = img1.getVertex();
+        vv = img1.getVertex();
         for(int i = 0; i < 22; ++i) {
             Point p = getPoint(PS[i][0], PS[i][1]);
             X1[i] = int(p.x*scale+0.5);
@@ -1689,7 +1766,7 @@ public:
 //*/
 //*
         if(folder != "Sim") img2.getFilted();
-        v = img2.getVertex();
+        vv = img2.getVertex();
         for(int i = 0; i < 22; ++i) {
             Point p = getPoint(PS[i][0], PS[i][1]);
             X2[i] = int(p.x*scale+0.5);
