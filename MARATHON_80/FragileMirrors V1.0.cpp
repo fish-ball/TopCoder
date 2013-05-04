@@ -77,21 +77,9 @@ public:
         p[2][x][p[0][x][y]] = y;
         p[3][p[1][x][y]][y] = x;
         
-    }
+    } 
     
-    // 计算某个方格的得分 
-    int eval(int x, int y) {
-        if(!b[x][y]) return 0;
-        int ans = 1;
-        for(int d = 0, xx, yy; d < 4; ++d) {
-            xx = dx[d] ? p[d][x][y] : x;
-            yy = dy[d] ? p[d][x][y] : y;
-            if(x==0 || y==0 || x>n || y>n) ans+=1;
-        }
-        return ans*ans;
-    }
-    
-    // 测试在给定的位置射出一条光线的话得分是多少 
+    // 测试在给定的位置射出一条光线的话会消去几个镜子
     // rollback 返回执行后是否回复原状  
     int exec(int x0, int y0, bool rollback = true, int depth = 0) {
         
@@ -157,14 +145,34 @@ public:
 
         }
         
-        // 3.X. 高阶测算 
+        // 3.X. 下一阶测算
         if(depth > 0) {
-            ans = 999999;
-            for(int i = 1; i <= n; ++i) {
-                for(int j = 1; j <= n; ++j) {
-                    ans -= eval(i, j);
-                }
+            
+            // 找到最大化的光线位置 
+            int _x = -1, _y = -1, _v = 0;
+            int x, y, v;
+            int k = n;
+            if(k > 60) k = n / 2;
+            if(k > 70) k = n / 4;
+            if(k > 80) k = n / 6;
+            if(k > 90) k = n / 8;
+            for(; k > 0; --k) {
+                int i = rand() % n + 1;
+                // R-ray 
+                x = i; y = 0; v = exec(x, y, true, depth-1);
+                if(_v < v) { _x = x; _y = y; _v = v; }
+                // D-ray 
+                x = 0; y = i; v = exec(x, y, true, depth-1);
+                if(_v < v) { _x = x; _y = y; _v = v; }
+                // L-ray 
+                x = i; y = n+1; v = exec(x, y, true, depth-1);
+                if(_v < v) { _x = x; _y = y; _v = v; }
+                // U-ray 
+                x = n+1; y = i; v = exec(x, y, true, depth-1);
+                if(_v < v) { _x = x; _y = y; _v = v; }
             }
+            
+            ans += _v / 2;
         } 
         
         // 4. 如果需要回复原状，则回滚所有的轨迹
