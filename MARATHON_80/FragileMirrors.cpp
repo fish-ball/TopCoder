@@ -16,21 +16,20 @@ int td[2][4] = {
 };
 const char* dc = "RDLU";
 
+inline int zip(int x, int y) {return (x<<16)|y;}
+inline int zx(int z) {return z>>16;}
+inline int zy(int z) {return z&0xFFFF;}
+
 
 class Clock {
 public:
     static double start;
-    
-    static void init() {
-        start = clock();
-    }
-    
-    static double elapsed() {
-        return (clock() - start) / CLOCKS_PER_SEC;
-    }
+    static void init() {start = clock();}
+    static double elapsed() {return (clock() - start) / CLOCKS_PER_SEC;}
 };
 
 double Clock::start = 0;
+
 
 class Mirror {
 public:
@@ -40,12 +39,30 @@ public:
     char p[4][102][102];
     
     Mirror(vector <string> board) {
+        
+        // 获取计数 
         n = board.size();
         cnt = n * n;
+        
+        // 清空镜子状态为全部存在 
         memset(b, true, sizeof(b));
-        for(size_t i = 0; i < n; ++i) {
-            strcpy(r[i+1]+1, board[i].c_str());
+        
+        // 读入镜子 
+        for(int i = 0; i < n; ++i) {
+            for(int j = 0; j < n; ++j) {
+                r[i+1][j+1] = board[i][j] == 'R' ? 1 : 0;
+            }
         }
+        
+        // 使用 r 的边角位简化初始方向 
+        for(int i = 1; i <= n; ++i) {
+            r[i][0] = 0;
+            r[0][i] = 1;
+            r[i][n+1] = 2;
+            r[n+1][i] = 3;
+        }
+        
+        // 初始化十字链表 
         for(size_t i = 0; i < n+2; ++i) {
             for(size_t j = 0; j < n+2; ++j) {
                 p[0][i][j] = j + 1;
@@ -57,15 +74,7 @@ public:
     }
     
     // 在某个位置恢复一面镜子 
-    void restore(int x, int y) {
-        
-        #if DEBUG 
-        // 断言：恢复的位置是否已经没有镜子了 
-        if(b[x][y]) {
-            cerr << "错误：试图在有镜子的地方恢复一面镜子。" << endl;
-            return;
-        }
-        #endif
+    inline void restore(int x, int y) {
         
         // 恢复镜子标记 
         b[x][y] = true;
@@ -76,125 +85,89 @@ public:
         p[1][p[3][x][y]][y] = x;
         p[2][x][p[0][x][y]] = y;
         p[3][p[1][x][y]][y] = x;
-        
+
     }
     
-    // 计算某个方格的得分 
-    int eval(int x, int y) {
-        if(!b[x][y]) return 0;
-        int ans = 1;
-        for(int d = 0, xx, yy; d < 4; ++d) {
-            xx = dx[d] ? p[d][x][y] : x;
-            yy = dy[d] ? p[d][x][y] : y;
-            if(x==0 || y==0 || x>n || y>n) ans+=1;
-        }
-        return ans*ans;
+    inline void restore(int z) {
+        restore(zx(z), zy(z));
+    }
+    
+    void restore(vector<int>& path) {
+        while(!path.empty()) {
+            restore(path.back());
+            path.pop_back();
+        } 
     }
     
     // 测试在给定的位置射出一条光线的话得分是多少 
     // rollback 返回执行后是否回复原状  
-    int exec(int x0, int y0, bool rollback = true, int depth = 0) {
-        
-        #if DEBUG
-        //fprintf(stderr, "开始尝试光线：(%d, %d)；", x0, y0);
-        #endif
-        
-        // 0. 返回值
-        int ans = 0; 
+    int exec(int x, int y, vector<int>& path) {
         
         // 1. 当前坐标 (x, y) / 当前方向 d
-        int x = x0, y = y0, d;
-        if(y==0) d = 0;
-        else if(x==0) d = 1;
-        else if(y==n+1) d = 2;
-        else if(x==n+1) d = 3;
+        int d = r[x][y];
         
-        // 2. 消去轨迹，用于回溯 
-        vector<int> vx(0), vy(0); 
+        // 3.1. 转移到新的位置 
+        x = dx[d] ? p[d][x][y] : x;
+        y = dy[d] ? p[d][x][y] : y;
         
         // 3. 光线前进 
-        while(true) {
+        while(x>0 && x<=n && y>0 && y<=n) {
             
-            #if DEBUG
-            //fprintf(stderr, "(%d, %d): %c)|", x, y, dc[d]);
-            #endif
+            // 3.4. 光线转向 
+            d = td[r[x][y]][d];
             
-            // 3.1. 转移到新的位置 
-            x = dx[d] ? p[d][x][y] : x;
-            y = dy[d] ? p[d][x][y] : y;
-            
-            // 3.2. 检测退出条件
-            if(x==0 || y==0 || x>n || y>n) break;
-            
-            // 3.3. 删除镜子
-            #if debug
-            // 断言：镜子必须存在于该位置。 
-            if(!b[x][y]) {
-                cerr << "错误：试图在没有镜子的地方消去一面镜子。" << endl;
-                break;
-            }
-            #endif
+            // 3.5. 记录轨迹 
+            path.push_back(zip(x, y));
             
             // 3.3.1. 删除镜子标记  
             b[x][y] = false;
-            cnt -= 1;
-            ans += 1;
+            --cnt;
             
             // 3.3.2. 维护链接
             p[0][x][p[2][x][y]] = p[0][x][y];
             p[1][p[3][x][y]][y] = p[1][x][y];
             p[2][x][p[0][x][y]] = p[2][x][y];
             p[3][p[1][x][y]][y] = p[3][x][y];
-            
-            // 3.4. 光线转向 
-            d = td[r[x][y]=='R'][d];
-            
-            // 3.5. 记录轨迹 
-            if(rollback) {
-                vx.push_back(x);
-                vy.push_back(y);
-            } 
 
+            // 3.1. 转移到新的位置 
+            x = dx[d] ? p[d][x][y] : x;
+            y = dy[d] ? p[d][x][y] : y;
         }
         
-        // 3.X. 高阶测算 
-        if(depth > 0) {
-            ans = 999999;
-            for(int i = 1; i <= n; ++i) {
-                for(int j = 1; j <= n; ++j) {
-                    ans -= eval(i, j);
-                }
-            }
-        } 
-        
-        // 4. 如果需要回复原状，则回滚所有的轨迹
-        if(rollback) {
-            while(!vx.empty()) {
-                x = vx.back(); vx.pop_back();
-                y = vy.back(); vy.pop_back();
-                restore(x, y); 
-            }
-        } 
-        
-        #if DEBUG
-        //fprintf(stderr, "消去块数：%d\n", ans);
-        #endif
-        
-        // 5. 返回结果 
-        return ans;
+        return cnt;
         
     }
     
+    inline int exec(int z, vector<int>& path) {
+        return exec(zx(z), zy(z), path);
+    }
+    
+    
+    int exec(const vector<int> vz, vector<int>& path) {
+        int ans = 0;
+        for(size_t i = 0; i < vz.size(); ++i) {
+            exec(vz[i], path);
+        }
+        return cnt;
+    }
+    
 };
+
+struct Status {
+    int score; // 得分
+    vector<int> vz; // 光线堆栈 
+    Status() : score(0), vz(0) {}
+    Status(const Status& s) : score(s.score), vz(s.vz) {}
+};
+
+bool operator < (const Status& lhs, const Status& rhs) {
+    return lhs.score < rhs.score;
+}
 
 class FragileMirrors {
 public:
     vector <int> destroy(vector <string> board) {
     
-        #if DEBUG
-        //cerr << "program starts!" << endl;
-        #endif
-        
         Clock::init();
         
         // 最终返回值 
@@ -203,48 +176,55 @@ public:
         // 构造对象
         Mirror mi(board);
         
-        #if DEBUG
-        //cerr << "mirror constructed!" << endl;
-        #endif
+        size_t PK[] = {30, 30, 15, 15, 15, 15, 15, 15, 7, 6};
+        int PD[] =    {40, 40, 40, 40, 40, 40, 40, 40, 40, 2};
         
         // 开始消去
         while(mi.cnt > 0) {
             
-            #if DEBUG
-            //cerr << "remain: " << mi.cnt << endl;
-            #endif
+            size_t K = PK[int(Clock::elapsed())]; // 每层择优获取的状态个数 
+            int D = PD[int(Clock::elapsed())]; // 最大层深 
+cerr<<mi.cnt<<endl;
+            K = 400;
+            D = 100;
+
+            vector<Status> vs(1, Status());
             
-            // 找到最大化的光线位置 
-            int _x = -1, _y = -1, _v = 0;
-            int x, y, v;
-            int depth = Clock::elapsed() < 9 ? 1 : 0;
-            for(int i = 1; i <= mi.n; ++i) {
-                // R-ray 
-                x = i; y = 0; v = mi.exec(x, y, true, depth);
-                if(_v < v) { _x = x; _y = y; _v = v; }
-                // D-ray 
-                x = 0; y = i; v = mi.exec(x, y, true, depth);
-                if(_v < v) { _x = x; _y = y; _v = v; }
-                // L-ray 
-                x = i; y = mi.n+1; v = mi.exec(x, y, true, depth);
-                if(_v < v) { _x = x; _y = y; _v = v; }
-                // U-ray 
-                x = mi.n+1; y = i; v = mi.exec(x, y, true, depth);
-                if(_v < v) { _x = x; _y = y; _v = v; }
+            vector<int> path(0), path2(0);
+            
+            int cnt0 = mi.cnt;
+            
+            for(int dep = 0; dep < D; ++dep) {
+                vector<Status> vs2(0);
+                for(size_t k = 0; k < vs.size(); ++k) {
+                    mi.exec(vs[k].vz, path);
+                    //if(dep > 0 || mi.cnt < cnt0) {
+                        Status s;
+                        for(int i = 1, v; i <= mi.n; ++i) {
+                            s = vs[k]; s.score = mi.exec(0  , i, path2); s.vz.push_back(zip(0  , i)); vs2.push_back(s); mi.restore(path2); 
+                            s = vs[k]; s.score = mi.exec(i  , 0, path2); s.vz.push_back(zip(i  , 0)); vs2.push_back(s); mi.restore(path2); 
+                            s = vs[k]; s.score = mi.exec(mi.n+1, i, path2); s.vz.push_back(zip(mi.n+1, i)); vs2.push_back(s); mi.restore(path2); 
+                            s = vs[k]; s.score = mi.exec(i, mi.n+1, path2); s.vz.push_back(zip(i, mi.n+1)); vs2.push_back(s); mi.restore(path2); 
+                        }
+                    //}
+                    mi.restore(path);
+                }
+                sort(vs2.begin(), vs2.end());
+                vs2.resize(min(K, vs2.size()));
+                vs = vs2;
+                int j = 1;
+                if(vs[0].score == 0) break;
+                for(; j < vs.size(); ++j) {
+                    if(vs[j].vz[0] != vs[j-1].vz[0]) break;
+                }
+                if(j == vs.size()) break;
             }
             
-            #if DEBUG
-            //cerr << "消去：" << _v << endl;
-            if(mi.cnt > 0 && _v == 0) {
-                cerr << "程序计算失败：无法消去任何镜子但还有镜子。" << endl;
-                break; 
-            }
-            #endif
-            
-            // 射出光纤
-            mi.exec(_x, _y, false);
-            result.push_back(_x-1);
-            result.push_back(_y-1);
+            int z = vs.front().vz.front();
+            mi.exec(z, path);
+            result.push_back(zx(z)-1);
+            result.push_back(zy(z)-1);
+
         }
         
         // 返回结果
