@@ -19,6 +19,7 @@ const char* dc = "RDLU";
 inline int zip(int x, int y) {return (x<<16)|y;}
 inline int zx(int z) {return z>>16;}
 inline int zy(int z) {return z&0xFFFF;}
+inline int hash_code(int seed) { srand(seed); return rand(); }
 
 
 class Clock {
@@ -33,7 +34,7 @@ double Clock::start = 0;
 
 class Mirror {
 public:
-    int n, cnt;
+    int n, cnt, hash;
     char r[102][102];
     bool b[102][102];
     char p[4][102][102];
@@ -43,6 +44,7 @@ public:
         // 获取计数 
         n = board.size();
         cnt = n * n;
+        hash = 0;
         
         // 清空镜子状态为全部存在 
         memset(b, true, sizeof(b));
@@ -51,6 +53,7 @@ public:
         for(int i = 0; i < n; ++i) {
             for(int j = 0; j < n; ++j) {
                 r[i+1][j+1] = board[i][j] == 'R' ? 1 : 0;
+                hash ^= hash_code(zip(i+1, j+1));
             }
         }
         
@@ -78,6 +81,7 @@ public:
         
         // 恢复镜子标记 
         b[x][y] = true;
+        hash ^= hash_code(zip(x, y));
         ++cnt;
         
         // 维护链接 
@@ -121,6 +125,7 @@ public:
             
             // 3.3.1. 删除镜子标记  
             b[x][y] = false;
+            hash ^= hash_code(zip(x, y));
             --cnt;
             
             // 3.3.2. 维护链接
@@ -176,17 +181,22 @@ public:
         // 构造对象
         Mirror mi(board);
         
-        size_t PK[] = {30, 30, 15, 15, 15, 15, 15, 15, 7, 6};
-        int PD[] =    {40, 40, 40, 40, 40, 40, 40, 40, 40, 2};
+        size_t PK[] = {40, 40, 40, 40, 40, 40, 40, 40, 20, 10};
+        int PD[] =    {10, 10, 10, 10, 10, 10, 10, 10, 10, 2};
+
+
+        set<int> H;
         
         // 开始消去
         while(mi.cnt > 0) {
             
-            size_t K = PK[int(Clock::elapsed())]; // 每层择优获取的状态个数 
-            int D = PD[int(Clock::elapsed())]; // 最大层深 
-cerr<<mi.cnt<<endl;
-            K = 400;
-            D = 100;
+            size_t K = PK[min(9, int(Clock::elapsed()))]; // 每层择优获取的状态个数 
+            int D = PD[min(9, int(Clock::elapsed()))]; // 最大层深 
+//cerr<<mi.cnt<<endl;
+//            K = 40;
+//            D = 10;
+
+            H.clear();
 
             vector<Status> vs(1, Status());
             
@@ -195,6 +205,7 @@ cerr<<mi.cnt<<endl;
             int cnt0 = mi.cnt;
             
             for(int dep = 0; dep < D; ++dep) {
+//cerr<<"depth: " << dep << " size: " << vs.size() <<endl;
                 vector<Status> vs2(0);
                 for(size_t k = 0; k < vs.size(); ++k) {
                     mi.exec(vs[k].vz, path);
@@ -212,16 +223,17 @@ cerr<<mi.cnt<<endl;
                 sort(vs2.begin(), vs2.end());
                 vs2.resize(min(K, vs2.size()));
                 vs = vs2;
-                int j = 1;
                 if(vs[0].score == 0) break;
+                int j = 1;
                 for(; j < vs.size(); ++j) {
                     if(vs[j].vz[0] != vs[j-1].vz[0]) break;
                 }
                 if(j == vs.size()) break;
             }
             
-            int z = vs.front().vz.front();
+            int z = vs[0].vz[0];
             mi.exec(z, path);
+//fprintf(stderr, "(%d, %d)\n", zx(z), zy(z));
             result.push_back(zx(z)-1);
             result.push_back(zy(z)-1);
 
@@ -237,7 +249,8 @@ cerr<<mi.cnt<<endl;
 #if DEBUG
 
 int main() {
-    
+srand(456852454);
+cerr<<rand()<<endl;    
     int n;
     cin >> n;
     
