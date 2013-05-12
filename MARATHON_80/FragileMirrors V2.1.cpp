@@ -5,6 +5,7 @@
 #include <cstring>
 #include <ctime>
 #include <set>
+#include <bitset>
 using namespace std;
 
 #define DEBUG 1
@@ -194,32 +195,21 @@ public:
         // 构造对象
         Mirror mi(board);
         
+        size_t PK[] = {40, 40, 40, 40, 40, 40, 40, 40, 20, 10};
+        int PD[] =    {100, 100, 100, 100, 100, 100, 100, 100, 10, 2};
+
 
         set<i64> H;
-        #if DEBUG
-        int tt = 0;
-        #endif
+//int tt = 0;
         // 开始消去
         while(mi.cnt > 0) {
-             
+            
+            size_t K = PK[min(9, int(Clock::elapsed()))]; // 每层择优获取的状态个数 
+            int D = PD[min(9, int(Clock::elapsed()))]; // 最大层深 
+//cerr<<++tt<<": "<<mi.cnt<<endl;
+            //K = 40;
+            //D = 10;
 
-            size_t K, D;
-            
-            if(Clock::elapsed() < 90) {
-                K = max(12000 / mi.n - 100, 20);
-                D = 200;
-            }
-            else {
-                K = 10;
-                D = 3;
-            }
-            K = 50;
-            D=200;
-            
-            #if DEBUG
-            cerr<<++tt<<": "<<mi.cnt<<"\tK = " << K << endl;
-            #endif
-            
             H.clear();
             H.insert(mi.hash);
 
@@ -230,7 +220,6 @@ public:
             int cnt0 = mi.cnt;
             
             for(int dep = 0; dep < D; ++dep) {
-//                if(Clock::elapsed() > 9.5 && K > 10) break;
 //cerr<<"depth: " << dep << " size: " << vs.size() <<endl;
                 vector<Status> vs2(0);
                 for(size_t k = 0; k < vs.size(); ++k) {
@@ -281,15 +270,11 @@ public:
                 if(j == vs.size()) break;
             }
             
-            if(vs[0].vz.empty()) continue;
-            
-            for(size_t i = 0; (i<<1) < vs[0].vz.size(); ++i) {
-                int z = vs[0].vz[i];
-                mi.exec(z, path);
-    //fprintf(stderr, "(%d, %d)\n", zx(z), zy(z));
-                result.push_back(zx(z)-1);
-                result.push_back(zy(z)-1);
-            }
+            int z = vs[0].vz[0];
+            mi.exec(z, path);
+//fprintf(stderr, "(%d, %d)\n", zx(z), zy(z));
+            result.push_back(zx(z)-1);
+            result.push_back(zy(z)-1);
 
         }
 //cerr<<"score = " << 2.0 * mi.n / result.size() << endl;
@@ -302,15 +287,11 @@ public:
 
 #if DEBUG
 
-#include <fstream>
-
 int main() {
 
     int n;
     cin >> n;
-
-    FILE* fout = fopen("out.txt", "a");
-
+    
     vector<string> board(n);
     for(int i = 0; i < n; ++i) {
         cin >> board[i];
@@ -326,9 +307,7 @@ int main() {
     for(size_t i = 0; i < result.size(); ++i) {
         cout << result[i] << endl;
     }
-    fprintf(fout, "%d\t%lf\t%lf\n", n, Clock::elapsed(), n * 2.0 / result.size());
     
-    fclose(fout);
 }
 
 #endif

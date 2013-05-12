@@ -205,16 +205,14 @@ public:
 
             size_t K, D;
             
-            if(Clock::elapsed() < 90) {
-                K = max(12000 / mi.n - 100, 20);
+            if(Clock::elapsed() < 9) {
+                K = 6000 / mi.n - 15;
                 D = 200;
             }
             else {
                 K = 10;
                 D = 3;
             }
-            K = 50;
-            D=200;
             
             #if DEBUG
             cerr<<++tt<<": "<<mi.cnt<<"\tK = " << K << endl;
@@ -230,7 +228,7 @@ public:
             int cnt0 = mi.cnt;
             
             for(int dep = 0; dep < D; ++dep) {
-//                if(Clock::elapsed() > 9.5 && K > 10) break;
+                if(Clock::elapsed() > 9.5 && K > 10) break;
 //cerr<<"depth: " << dep << " size: " << vs.size() <<endl;
                 vector<Status> vs2(0);
                 for(size_t k = 0; k < vs.size(); ++k) {
@@ -283,7 +281,7 @@ public:
             
             if(vs[0].vz.empty()) continue;
             
-            for(size_t i = 0; (i<<1) < vs[0].vz.size(); ++i) {
+            for(size_t i = 0; i+i+i < vs[0].vz.size(); ++i) {
                 int z = vs[0].vz[i];
                 mi.exec(z, path);
     //fprintf(stderr, "(%d, %d)\n", zx(z), zy(z));
@@ -309,7 +307,7 @@ int main() {
     int n;
     cin >> n;
 
-    FILE* fout = fopen("out.txt", "a");
+    ofstream fout("out.txt", ios::app);
 
     vector<string> board(n);
     for(int i = 0; i < n; ++i) {
@@ -326,9 +324,8 @@ int main() {
     for(size_t i = 0; i < result.size(); ++i) {
         cout << result[i] << endl;
     }
-    fprintf(fout, "%d\t%lf\t%lf\n", n, Clock::elapsed(), n * 2.0 / result.size());
-    
-    fclose(fout);
+    fout << n << '\t' << Clock::elapsed() << '\t' << n * 2.0 / result.size() << endl;
+    fout.close();
 }
 
 #endif

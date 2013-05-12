@@ -4,12 +4,9 @@
 #include <string>
 #include <cstring>
 #include <ctime>
-#include <set>
 using namespace std;
 
 #define DEBUG 1
-
-typedef unsigned long long i64;
 
 int dx[] = {0, 1, 0, -1};
 int dy[] = {1, 0, -1, 0};
@@ -22,16 +19,7 @@ const char* dc = "RDLU";
 inline int zip(int x, int y) {return (x<<16)|y;}
 inline int zx(int z) {return z>>16;}
 inline int zy(int z) {return z&0xFFFF;}
-inline i64 hash_code(i64 key) {
-    key = (~key) + (key << 21); // key = (key << 21) - key - 1; 
-    key = key ^ (key >> 24); 
-    key = (key + (key << 3)) + (key << 8); // key * 265 
-    key = key ^ (key >> 14); 
-    key = (key + (key << 2)) + (key << 4); // key * 21 
-    key = key ^ (key >> 28); 
-    key = key + (key << 31); 
-    return key;
-}
+inline int hash_code(int seed) { srand(seed); return rand(); }
 
 
 class Clock {
@@ -46,8 +34,7 @@ double Clock::start = 0;
 
 class Mirror {
 public:
-    int n, cnt;
-    i64 hash;
+    int n, cnt, hash;
     char r[102][102];
     bool b[102][102];
     char p[4][102][102];
@@ -194,34 +181,17 @@ public:
         // 构造对象
         Mirror mi(board);
         
-
-        set<i64> H;
-        #if DEBUG
-        int tt = 0;
-        #endif
+        size_t PK[] = {40, 40, 40, 40, 40, 40, 40, 40, 20, 10};
+        int PD[] =    {10, 10, 10, 10, 10, 10, 10, 10, 10, 2};
+        
         // 开始消去
         while(mi.cnt > 0) {
-             
-
-            size_t K, D;
             
-            if(Clock::elapsed() < 90) {
-                K = max(12000 / mi.n - 100, 20);
-                D = 200;
-            }
-            else {
-                K = 10;
-                D = 3;
-            }
-            K = 50;
-            D=200;
-            
-            #if DEBUG
-            cerr<<++tt<<": "<<mi.cnt<<"\tK = " << K << endl;
-            #endif
-            
-            H.clear();
-            H.insert(mi.hash);
+            size_t K = PK[min(9, int(Clock::elapsed()))]; // 每层择优获取的状态个数 
+            int D = PD[min(9, int(Clock::elapsed()))]; // 最大层深 
+cerr<<mi.cnt<<endl;
+            K = 200;
+            D = 100;
 
             vector<Status> vs(1, Status());
             
@@ -230,48 +200,23 @@ public:
             int cnt0 = mi.cnt;
             
             for(int dep = 0; dep < D; ++dep) {
-//                if(Clock::elapsed() > 9.5 && K > 10) break;
 //cerr<<"depth: " << dep << " size: " << vs.size() <<endl;
                 vector<Status> vs2(0);
                 for(size_t k = 0; k < vs.size(); ++k) {
                     mi.exec(vs[k].vz, path);
-                    Status s;
-                    for(int i = 1, v; i <= mi.n; ++i) {
-//cerr<<mi.hash<<" ";
-                        s = vs[k]; s.score = mi.exec(0  , i, path2); 
-                        if(H.find(mi.hash) == H.end()) {
-                            H.insert(mi.hash);
-                            s.vz.push_back(zip(0  , i)); vs2.push_back(s); 
+                    //if(dep > 0 || mi.cnt < cnt0) {
+                        Status s;
+                        for(int i = 1, v; i <= mi.n; ++i) {
+                            s = vs[k]; s.score = mi.exec(0  , i, path2); s.vz.push_back(zip(0  , i)); vs2.push_back(s); mi.restore(path2); 
+                            s = vs[k]; s.score = mi.exec(i  , 0, path2); s.vz.push_back(zip(i  , 0)); vs2.push_back(s); mi.restore(path2); 
+                            s = vs[k]; s.score = mi.exec(mi.n+1, i, path2); s.vz.push_back(zip(mi.n+1, i)); vs2.push_back(s); mi.restore(path2); 
+                            s = vs[k]; s.score = mi.exec(i, mi.n+1, path2); s.vz.push_back(zip(i, mi.n+1)); vs2.push_back(s); mi.restore(path2); 
                         }
-                        mi.restore(path2); 
-//cerr<<mi.hash<<endl;
-                        
-                        s = vs[k]; s.score = mi.exec(i  , 0, path2); 
-                        if(H.find(mi.hash) == H.end()) {
-                            H.insert(mi.hash);
-                            s.vz.push_back(zip(i  , 0)); vs2.push_back(s);
-                        }
-                        mi.restore(path2); 
-                        
-                        s = vs[k]; s.score = mi.exec(mi.n+1, i, path2); 
-                        if(H.find(mi.hash) == H.end()) {
-                            H.insert(mi.hash);
-                            s.vz.push_back(zip(mi.n+1, i)); vs2.push_back(s);
-                        }
-                        mi.restore(path2); 
-                        
-                        s = vs[k]; s.score = mi.exec(i, mi.n+1, path2); 
-                        if(H.find(mi.hash) == H.end()) {
-                            H.insert(mi.hash);
-                            s.vz.push_back(zip(i, mi.n+1)); vs2.push_back(s); 
-                        }
-                        mi.restore(path2); 
-                    }
+                    //}
                     mi.restore(path);
                 }
                 sort(vs2.begin(), vs2.end());
                 vs2.resize(min(K, vs2.size()));
-                if(vs2.empty()) break;
                 vs = vs2;
                 if(vs[0].score == 0) break;
                 int j = 1;
@@ -281,18 +226,14 @@ public:
                 if(j == vs.size()) break;
             }
             
-            if(vs[0].vz.empty()) continue;
-            
-            for(size_t i = 0; (i<<1) < vs[0].vz.size(); ++i) {
-                int z = vs[0].vz[i];
-                mi.exec(z, path);
-    //fprintf(stderr, "(%d, %d)\n", zx(z), zy(z));
-                result.push_back(zx(z)-1);
-                result.push_back(zy(z)-1);
-            }
+            int z = vs[0].vz[0];
+            mi.exec(z, path);
+//fprintf(stderr, "(%d, %d)\n", zx(z), zy(z));
+            result.push_back(zx(z)-1);
+            result.push_back(zy(z)-1);
 
         }
-//cerr<<"score = " << 2.0 * mi.n / result.size() << endl;
+        
         // 返回结果
         return result; 
 
@@ -302,15 +243,12 @@ public:
 
 #if DEBUG
 
-#include <fstream>
-
 int main() {
-
+srand(456852454);
+cerr<<rand()<<endl;    
     int n;
     cin >> n;
-
-    FILE* fout = fopen("out.txt", "a");
-
+    
     vector<string> board(n);
     for(int i = 0; i < n; ++i) {
         cin >> board[i];
@@ -326,9 +264,7 @@ int main() {
     for(size_t i = 0; i < result.size(); ++i) {
         cout << result[i] << endl;
     }
-    fprintf(fout, "%d\t%lf\t%lf\n", n, Clock::elapsed(), n * 2.0 / result.size());
     
-    fclose(fout);
 }
 
 #endif

@@ -1,0 +1,1 @@
+java -jar FragileMirrorsVis.jar -exec FragileMirrorsV2.0.exe -seed 3 -sz 10 -arrow 2 -delay 20 -pause
