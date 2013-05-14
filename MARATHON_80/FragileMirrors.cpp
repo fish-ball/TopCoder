@@ -5,6 +5,7 @@
 #include <cstring>
 #include <ctime>
 #include <set>
+#include <map>
 using namespace std;
 
 #define DEBUG 1
@@ -205,19 +206,20 @@ public:
 
             size_t K, D;
             
-            if(Clock::elapsed() < 90) {
-                K = max(12000 / mi.n - 100, 20);
-                D = 200;
+            if(Clock::elapsed() < 8) {
+                K = 60-40*(mi.n-50)/50;
+            //    D = 20-10*(mi.n-50)/50;
+            //K = 25;
+            D = 200;
             }
             else {
                 K = 10;
-                D = 3;
+                D = 5;
             }
-            K = 50;
-            D=200;
+            
             
             #if DEBUG
-            cerr<<++tt<<": "<<mi.cnt<<"\tK = " << K << endl;
+            cerr<<++tt<<": "<<mi.cnt<<"\tK = " << K << "\tD = " << D << endl;
             #endif
             
             H.clear();
@@ -230,7 +232,7 @@ public:
             int cnt0 = mi.cnt;
             
             for(int dep = 0; dep < D; ++dep) {
-//                if(Clock::elapsed() > 9.5 && K > 10) break;
+                if(Clock::elapsed() > 9.5 && K > 10) break;
 //cerr<<"depth: " << dep << " size: " << vs.size() <<endl;
                 vector<Status> vs2(0);
                 for(size_t k = 0; k < vs.size(); ++k) {
@@ -251,7 +253,7 @@ public:
                             H.insert(mi.hash);
                             s.vz.push_back(zip(i  , 0)); vs2.push_back(s);
                         }
-                        mi.restore(path2); 
+                        mi.restore(path2);
                         
                         s = vs[k]; s.score = mi.exec(mi.n+1, i, path2); 
                         if(H.find(mi.hash) == H.end()) {
@@ -269,26 +271,43 @@ public:
                     }
                     mi.restore(path);
                 }
-                sort(vs2.begin(), vs2.end());
-                vs2.resize(min(K, vs2.size()));
                 if(vs2.empty()) break;
-                vs = vs2;
-                if(vs[0].score == 0) break;
-                int j = 1;
-                for(; j < vs.size(); ++j) {
-                    if(vs[j].vz[0] != vs[j-1].vz[0]) break;
+                sort(vs2.begin(), vs2.end());
+                
+                map<int, int> mp;
+                vs.clear();
+                int stop = (vs2[0].score*6/5);
+                /*
+                int p = 0;
+                while(p < vs2.size() && vs2[p].score < stop) ++p;
+                if(p > K / 2) random_shuffle(vs2.begin()+K/2, vs2.begin() + K / 2+1);
+                */
+                for(size_t i = 0; i < vs2.size() && vs.size() < K; ++i) {
+                    //if(vs2[i].score > stop) break;
+                    //if(mp[vs2[i].vz[0]] < (vs2.size()<<2)) {
+                        vs.push_back(vs2[i]);
+                        mp[vs2[i].vz[0]] += vs2.size() - i;
+                    //}
                 }
-                if(j == vs.size()) break;
+                
+                if(vs[0].score == 0) break;
+                if(mp.size() == 1) break;
+                /*
+                vs2.resize(min(K, vs2.size()));
+                vs = vs2;
+                */
+                
             }
             
             if(vs[0].vz.empty()) continue;
             
-            for(size_t i = 0; (i<<1) < vs[0].vz.size(); ++i) {
+            for(size_t i = 0; (i<<1) < vs[0].vz.size() && i < 2; ++i) {
                 int z = vs[0].vz[i];
                 mi.exec(z, path);
     //fprintf(stderr, "(%d, %d)\n", zx(z), zy(z));
                 result.push_back(zx(z)-1);
                 result.push_back(zy(z)-1);
+    //break;
             }
 
         }
@@ -309,7 +328,7 @@ int main() {
     int n;
     cin >> n;
 
-    FILE* fout = fopen("out.txt", "a");
+    ofstream fout("out.txt", ios::app);
 
     vector<string> board(n);
     for(int i = 0; i < n; ++i) {
@@ -326,9 +345,8 @@ int main() {
     for(size_t i = 0; i < result.size(); ++i) {
         cout << result[i] << endl;
     }
-    fprintf(fout, "%d\t%lf\t%lf\n", n, Clock::elapsed(), n * 2.0 / result.size());
-    
-    fclose(fout);
+    fout << n << '\t' << Clock::elapsed() << '\t' << n * 2.0 / result.size() << endl;
+    fout.close();
 }
 
 #endif
