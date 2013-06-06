@@ -457,26 +457,9 @@ const Polygon ConvexHull(Polygon P) {
 
 
 
-struct WCircle : Circle {
-    double w;
-    int idx;
-    WCircle() : Circle(), w(0), idx(-1) {}
-    WCircle(const Point& c, double r, double w, int idx = -1) :
-        Circle(c,r), w(w), idx(idx) {}
-    WCircle(double x, double y, double r, double w, int idx = -1) :
-        Circle(Point(x,y),r), w(w), idx(idx) {}
-};
 
 
 #define DEBUG 0
-
-bool circleCmp(const Circle& lhs, const Circle& rhs) {
-    return lhs.c.x < rhs.c.x || lhs.c.x == rhs.c.x && lhs.c.y < rhs.c.y;
-}
-
-bool wcCmp(const WCircle& lhs, const WCircle& rhs) {
-    return lhs.w < rhs.w;
-}
 
 class CirclesSeparation {
     
@@ -484,22 +467,22 @@ class CirclesSeparation {
     
     vector<double> ans;
     
-    vector<Point> Z;
+    vector<Circle> C;
     
-    vector<WCircle> C;
+    vector<double> M;
     
     vector<double> __getResult() {
         
-        ans.resize(N<<1);
+        ans.clear();
         
         for(int i = 0; i < N; ++i) {
-            ans[C[i].idx*2] = C[i].c.x;
-            ans[C[i].idx*2+1] = C[i].c.y;
+            ans.push_back(C[i].c.x);
+            ans.push_back(C[i].c.y);
         }
         
         return ans;
     }
-    /*
+    
     bool __isValid(int k) {
         for(int i = 0; i < N; ++i) {
             if(i == k) continue;
@@ -520,7 +503,7 @@ class CirclesSeparation {
         }
         return f;
     }
-    */
+    
 public:
     
     vector<double> minimumWork(
@@ -530,57 +513,19 @@ public:
             vector <double> m) {
         
         N = x.size();
-        cerr<<"N = "<<N<<endl;
         
-        Z.resize(N);
         C.resize(N);
+        M.resize(N);
         
         for(int i = 0; i < N; ++i) {
-            Z[i].x = C[i].c.x = x[i];
-            Z[i].y = C[i].c.y = y[i];
+            C[i].c.x = x[i];
+            C[i].c.y = y[i];
             C[i].r = r[i];
-            C[i].w = m[i];
-            C[i].idx = i;
+            M[i] = m[i];
         }
         
-        sort(C.rbegin(), C.rend(), wcCmp);
+        srand(0);
         
-        vector<WCircle> E(0);
-        
-        double _sin[360], _cos[360];
-        for(int i = 0; i < 360; ++i) {
-            _sin[i] = sin(i);
-            _cos[i] = cos(i);
-        }
-        
-        for(int i = 0; i < N; ++i) {
-            //cerr << "i = " << i << endl;
-            for(double d = 0; E.size() == i; d += 0.001*sqrt(i+1)) {
-                    //cerr << "d = " << d << endl;
-                for(int c = 0; c < 360; c+=1) {
-                    double x = C[i].c.x + d * _cos[c]
-                        , y = C[i].c.y + d * _sin[c];
-                    //cerr << "d = " << d << ", c = " << c << endl;
-                    bool found = true;
-                    for(int j = 0; j < i; ++j) {
-                        if((C[i].r+E[j].r)*(C[i].r+E[j].r) >
-                            (E[j].c.x-x)*(E[j].c.x-x) +
-                            (E[j].c.y-y)*(E[j].c.y-y)+1e-8) {
-                            found = false;
-                            break;
-                        }
-                    }
-                    if(found) {
-                        C[i].c.x = x;
-                        C[i].c.y = y;
-                        E.push_back(C[i]);
-                        break;
-                    }
-                }
-            }
-        }
-        
-        /*
         int T = 0;
         while(++T) {
             //cerr << T << ": "<<endl;
@@ -595,7 +540,7 @@ public:
             for(int i = 0; i < N; ++i) {
                 if(nz(F[i].x)||nz(F[i].y)) {
                 //cerr<<"i" <<i<<": "<<F[i]/M[i]<<endl;
-                    Point mv = Point(F[i].x/5/M[i], F[i].y/5/M[i]);
+                    Point mv = Point(F[i].x/2/M[i], F[i].y/2/M[i]);
                     if(mv.length()>C[i].r) mv = mv/mv.length()*C[i].r;
                     C[i].c += mv + mv/mv.length()*0.01;
                 }
@@ -604,9 +549,9 @@ public:
             for(int i = 0; i < N; ++i) {
                 cerr<<C[i].c<<' ';
             }cerr<<endl;
-            * /
+            //*/
         }
-        */
+        
         return __getResult();
     }
 
