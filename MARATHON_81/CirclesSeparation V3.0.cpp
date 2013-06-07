@@ -468,7 +468,7 @@ struct WCircle : Circle {
 };
 
 
-#define DEBUG 0
+#define DEBUG 1
 
 bool circleCmp(const Circle& lhs, const Circle& rhs) {
     return lhs.c.x < rhs.c.x || lhs.c.x == rhs.c.x && lhs.c.y < rhs.c.y;
